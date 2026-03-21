@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Услуги - ServerPro B2B{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero-section text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1>Профессиональные IT-услуги</h1>
+                <p class="lead opacity-90">
+                    Установка, настройка, обслуживание и ремонт серверного оборудования.
+                    Работаем по всей России с гарантией качества.
+                </p>
+                <a href="{% url 'services:create_request' %}" class="btn btn-light btn-lg">
+                    <i class="bi bi-tools me-2"></i>Заказать услугу
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services -->
+<section class="py-5">
+    <div class="container">
+        <!-- Categories Filter -->
+        <div class="d-flex justify-content-center flex-wrap gap-2 mb-5">
+            <a href="{% url 'services:service_list' %}" 
+               class="btn {% if not current_category %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                Все услуги
+            </a>
+            {% for category in categories %}
+            <a href="?category={{ category.slug }}" 
+               class="btn {% if current_category == category.slug %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                {{ category.name }}
+            </a>
+            {% endfor %}
+        </div>
+        
+        <!-- Popular Services -->
+        {% if popular_services and not current_category %}
+        <div class="mb-5">
+            <h3 class="mb-4">Популярные услуги</h3>
+            <div class="row g-4">
+                {% for service in popular_services %}
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+                    <div class="card service-card h-100">
+                        <div class="card-body">
+                            <div class="service-icon">
+                                <i class="bi bi-{{ service.category.icon|default:'gear' }}"></i>
+                            </div>
+                            <h5 class="service-title">{{ service.name }}</h5>
+                            <p class="text-muted">{{ service.short_description|truncatewords:20 }}</p>
+                            <div class="service-price">{{ service.get_price_display }}</div>
+                            <a href="{% url 'services:create_request_for_service' service.slug %}" 
+                               class="btn btn-primary mt-3">
+                                Заказать
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- All Services -->
+        <h3 class="mb-4">{% if current_category %}Услуги{% else %}Все услуги{% endif %}</h3>
+        <div class="row g-4">
+            {% for service in services %}
+            <div class="col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="card h-100">
+                    {% if service.image %}
+                    <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <span class="badge bg-primary mb-2">{{ service.category.name }}</span>
+                        <h5 class="card-title">{{ service.name }}</h5>
+                        <p class="card-text text-muted">{{ service.short_description }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="fs-5 fw-bold text-primary">{{ service.get_price_display }}</span>
+                            <span class="text-muted small">
+                                <i class="bi bi-clock me-1"></i>~{{ service.duration_hours }}ч
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0 pb-3">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'services:create_request_for_service' service.slug %}" 
+                               class="btn btn-primary">
+                                <i class="bi bi-calendar-plus me-2"></i>Заказать
+                            </a>
+                            <a href="{% url 'services:service_detail' service.slug %}" 
+                               class="btn btn-outline-secondary">
+                                Подробнее
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <div class="icon"><i class="bi bi-tools"></i></div>
+                    <h3>Услуги не найдены</h3>
+                    <p>Попробуйте выбрать другую категорию</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-5 bg-dark text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h3>Нужна срочная помощь?</h3>
+                <p class="mb-0 opacity-75">Наши мастера готовы выехать в течение 2 часов</p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <a href="tel:+78001234567" class="btn btn-light btn-lg">
+                    <i class="bi bi-telephone-fill me-2"></i>8 (800) 123-45-67
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Technicians -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2>Наши специалисты</h2>
+            <p class="text-muted">Сертифицированные мастера с опытом работы</p>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+            {% for tech in technicians|slice:":4" %}
+            <div class="col-lg-3 col-md-6">
+                <div class="card technician-card h-100">
+                    <div class="card-body">
+                        {% if tech.user.avatar %}
+                        <img src="{{ tech.user.avatar.url }}" alt="" class="technician-avatar">
+                        {% else %}
+                        <img src="{% static 'images/avatar-placeholder.jpg' %}" alt="" class="technician-avatar">
+                        {% endif %}
+                        <h5 class="technician-name">{{ tech.user.full_name }}</h5>
+                        <p class="technician-specialization">
+                            {% for spec in tech.specializations.all|slice:":2" %}
+                                {{ spec.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                        <div class="technician-rating">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <span class="fw-bold">{{ tech.rating }}</span>
+                            <span class="text-muted">({{ tech.completed_orders }} заказов)</span>
+                        </div>
+                        <div class="technician-stats">
+                            <div>
+                                <div class="fw-bold">{{ tech.experience_years }}</div>
+                                <small class="text-muted">лет опыта</small>
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ tech.completed_orders }}</div>
+                                <small class="text-muted">заказов</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'services:technician_list' %}" class="btn btn-outline-primary">
+                Все специалисты <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Каталог - ServerPro B2B{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<section class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Главная</a></li>
+                <li class="breadcrumb-item active">Каталог</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Sidebar Filters -->
+            <div class="col-lg-3">
+                <div class="filter-sidebar">
+                    <form method="GET" id="filterForm">
+                        <!-- Search -->
+                        <div class="filter-group">
+                            <h6 class="filter-title">Поиск</h6>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Название или артикул" value="{{ request.GET.search }}">
+                        </div>
+                        
+                        <!-- Categories -->
+                        <div class="filter-group">
+                            <h6 class="filter-title">Категории</h6>
+                            {% for category in categories %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="category" 
+                                       value="{{ category.slug }}" id="cat{{ category.id }}"
+                                       {% if current_category == category.slug %}checked{% endif %}
+                                       onchange="this.form.submit()">
+                                <label class="form-check-label" for="cat{{ category.id }}">
+                                    {{ category.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Brands -->
+                        <div class="filter-group">
+                            <h6 class="filter-title">Бренды</h6>
+                            {% for brand in brands %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="brand" 
+                                       value="{{ brand.slug }}" id="brand{{ brand.id }}"
+                                       {% if current_brand == brand.slug %}checked{% endif %}
+                                       onchange="this.form.submit()">
+                                <label class="form-check-label" for="brand{{ brand.id }}">
+                                    {{ brand.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Price Range -->
+                        <div class="filter-group">
+                            <h6 class="filter-title">Цена</h6>
+                            <div class="price-range">
+                                <input type="number" name="min_price" class="form-control" 
+                                       placeholder="От" value="{{ request.GET.min_price }}">
+                                <span>—</span>
+                                <input type="number" name="max_price" class="form-control" 
+                                       placeholder="До" value="{{ request.GET.max_price }}">
+                            </div>
+                        </div>
+                        
+                        <!-- In Stock -->
+                        <div class="filter-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="in_stock" 
+                                       value="true" id="inStock"
+                                       {% if request.GET.in_stock == 'true' %}checked{% endif %}
+                                       onchange="this.form.submit()">
+                                <label class="form-check-label" for="inStock">
+                                    Только в наличии
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Применить</button>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary">Сбросить</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Products Grid -->
+            <div class="col-lg-9">
+                <!-- Sort & View -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <span class="text-muted">Найдено: {{ products.paginator.count }} товаров</span>
+                    </div>
+                    <div class="d-flex gap-3 align-items-center">
+                        <label class="text-muted">Сортировка:</label>
+                        <select class="form-select form-select-sm" style="width: auto;" 
+                                onchange="location.href='?sort='+this.value">
+                            <option value="-created_at" {% if current_sort == '-created_at' %}selected{% endif %}>Сначала новые</option>
+                            <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Цена: по возрастанию</option>
+                            <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Цена: по убыванию</option>
+                            <option value="name" {% if current_sort == 'name' %}selected{% endif %}>По названию</option>
+                            <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>По популярности</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Products -->
+                <div class="row g-4">
+                    {% for product in products %}
+                    <div class="col-md-4 col-6">
+                        {% include 'products/includes/product_card.html' %}
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <div class="icon"><i class="bi bi-search"></i></div>
+                            <h3>Товары не найдены</h3>
+                            <p>Попробуйте изменить параметры фильтра</p>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-primary">
+                                Сбросить фильтры
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if products.has_other_pages %}
+                <nav class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        {% if products.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in products.paginator.page_range %}
+                            {% if products.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if products.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

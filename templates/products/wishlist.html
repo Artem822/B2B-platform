@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Избранное - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <h1 class="h3 mb-4">Избранное</h1>
+        
+        {% if wishlist %}
+        <div class="row g-4">
+            {% for item in wishlist %}
+            <div class="col-lg-3 col-md-4 col-6">
+                {% with product=item.product %}
+                {% include 'products/includes/product_card.html' %}
+                {% endwith %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon"><i class="bi bi-heart"></i></div>
+            <h3>Избранное пусто</h3>
+            <p>Добавляйте понравившиеся товары, чтобы не потерять их</p>
+            <a href="{% url 'products:product_list' %}" class="btn btn-primary">
+                <i class="bi bi-grid me-2"></i>Перейти в каталог
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

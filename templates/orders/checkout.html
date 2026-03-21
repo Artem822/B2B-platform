@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Оформление заказа - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'orders:cart' %}">Корзина</a></li>
+                <li class="breadcrumb-item active">Оформление заказа</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <!-- Checkout Steps -->
+        <div class="checkout-steps mb-5">
+            <div class="checkout-step completed">
+                <span class="step-number"><i class="bi bi-check"></i></span>
+                <span>Корзина</span>
+            </div>
+            <div class="checkout-step active">
+                <span class="step-number">2</span>
+                <span>Оформление</span>
+            </div>
+            <div class="checkout-step">
+                <span class="step-number">3</span>
+                <span>Оплата</span>
+            </div>
+        </div>
+        
+        <form method="POST" id="checkoutForm">
+            {% csrf_token %}
+            
+            <div class="row g-4">
+                <!-- Checkout Form -->
+                <div class="col-lg-8">
+                    <!-- Contact Info -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person me-2 text-primary"></i>Контактные данные
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ form.contact_name|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.contact_phone|as_crispy_field }}
+                                </div>
+                                <div class="col-12">
+                                    {{ form.contact_email|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Delivery Address -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-geo-alt me-2 text-primary"></i>Адрес доставки
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if user.addresses.exists %}
+                            <div class="mb-4">
+                                <label class="form-label">Выберите сохранённый адрес:</label>
+                                <div class="row g-2">
+                                    {% for address in user.addresses.all %}
+                                    <div class="col-md-6">
+                                        <div class="form-check card p-3">
+                                            <input class="form-check-input" type="radio" 
+                                                   name="saved_address" id="address{{ address.id }}"
+                                                   value="{{ address.id }}"
+                                                   {% if address.is_default %}checked{% endif %}
+                                                   onchange="fillAddress({{ address.id }}, '{{ address.city }}', '{{ address.street }}, {{ address.building }}', '{{ address.postal_code }}')">
+                                            <label class="form-check-label" for="address{{ address.id }}">
+                                                <strong>{{ address.title }}</strong><br>
+                                                <small class="text-muted">
+                                                    {{ address.city }}, {{ address.street }}, {{ address.building }}
+                                                </small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    <div class="col-md-6">
+                                        <div class="form-check card p-3">
+                                            <input class="form-check-input" type="radio" 
+                                                   name="saved_address" id="addressNew"
+                                                   value="new">
+                                            <label class="form-check-label" for="addressNew">
+                                                <strong>Новый адрес</strong><br>
+                                                <small class="text-muted">Указать другой адрес</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="row g-3" id="addressFields">
+                                <div class="col-md-6">
+                                    {{ form.delivery_city|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.delivery_postal_code|as_crispy_field }}
+                                </div>
+                                <div class="col-12">
+                                    {{ form.delivery_address|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Method -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-credit-card me-2 text-primary"></i>Способ оплаты
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 h-100">
+                                        <input class="form-check-input" type="radio" 
+                                               name="payment_method" id="payCard" value="card">
+                                        <label class="form-check-label d-block" for="payCard">
+                                            <i class="bi bi-credit-card fs-3 text-primary d-block mb-2"></i>
+                                            <strong>Банковская карта</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 h-100">
+                                        <input class="form-check-input" type="radio" 
+                                               name="payment_method" id="payInvoice" value="invoice" checked>
+                                        <label class="form-check-label d-block" for="payInvoice">
+                                            <i class="bi bi-file-earmark-text fs-3 text-primary d-block mb-2"></i>
+                                            <strong>Счёт на оплату</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 h-100">
+                                        <input class="form-check-input" type="radio" 
+                                               name="payment_method" id="payCash" value="cash">
+                                        <label class="form-check-label d-block" for="payCash">
+                                            <i class="bi bi-cash-stack fs-3 text-primary d-block mb-2"></i>
+                                            <strong>Наличные</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Installation Service -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-tools me-2 text-primary"></i>Услуга установки
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" 
+                                       name="include_installation" id="includeInstallation"
+                                       onchange="toggleInstallation()">
+                                <label class="form-check-label" for="includeInstallation">
+                                    <strong>Добавить услугу установки и настройки</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Наши специалисты приедут и установят оборудование
+                                        <span class="text-primary">(+5% от стоимости заказа)</span>
+                                    </small>
+                                </label>
+                            </div>
+                            
+                            <div id="installationFields" style="display: none;">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        {{ form.installation_date|as_crispy_field }}
+                                    </div>
+                                    <div class="col-12">
+                                        {{ form.installation_notes|as_crispy_field }}
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Минимальная дата установки — через 2 дня после оформления заказа.
+                                    Мастер свяжется с вами для уточнения времени.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comments -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-chat-left-text me-2 text-primary"></i>Комментарий к заказу
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {{ form.customer_notes|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Summary -->
+                <div class="col-lg-4">
+                    <div class="cart-summary">
+                        <h4><i class="bi bi-bag-check me-2"></i>Ваш заказ</h4>
+                        
+                        <!-- Cart Items -->
+                        <div class="mb-4">
+                            {% for item in cart %}
+                            <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
+                                <img src="{{ item.product.main_image.url }}" 
+                                     alt="" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <div class="small fw-semibold">{{ item.product.name|truncatewords:5 }}</div>
+                                    <div class="text-muted small">{{ item.quantity }} шт.</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-semibold">{{ item.total_price|floatformat:0 }} ₽</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Promo Code -->
+                        <div class="mb-4">
+                            <form method="POST" class="input-group">
+                                {% csrf_token %}
+                                <input type="text" class="form-control" name="promo_code" placeholder="Промокод">
+                                <button class="btn btn-outline-primary" type="submit" name="apply_promo">
+                                    Применить
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Totals -->
+                        <div class="summary-row">
+                            <span>Товары ({{ cart|length }}):</span>
+                            <span>{{ subtotal|floatformat:0 }} ₽</span>
+                        </div>
+                        
+                        {% if discount > 0 %}
+                        <div class="summary-row text-success">
+                            <span>Скидка:</span>
+                            <span>-{{ discount|floatformat:0 }} ₽</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="summary-row">
+                            <span>Доставка:</span>
+                            <span>
+                                {% if delivery_cost > 0 %}
+                                    {{ delivery_cost|floatformat:0 }} ₽
+                                {% else %}
+                                    <span class="text-success">Бесплатно</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="summary-row" id="installationRow" style="display: none;">
+                            <span>Установка:</span>
+                            <span id="installationCost">0 ₽</span>
+                        </div>
+                        
+                        <div class="summary-row total">
+                            <span>Итого:</span>
+                            <span class="text-primary" id="totalAmount">{{ total|floatformat:0 }} ₽</span>
+                        </div>
+                        
+                        <!-- Submit -->
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle me-2"></i>Подтвердить заказ
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                Нажимая кнопку, вы соглашаетесь с
+                                <a href="#">условиями покупки</a>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const subtotal = {{ subtotal }};
+    const deliveryCost = {{ delivery_cost }};
+    const discount = {{ discount }};
+    
+    function toggleInstallation() {
+        const checkbox = document.getElementById('includeInstallation');
+        const fields = document.getElementById('installationFields');
+        const row = document.getElementById('installationRow');
+        const costSpan = document.getElementById('installationCost');
+        
+        if (checkbox.checked) {
+            fields.style.display = 'block';
+            row.style.display = 'flex';
+            const installCost = Math.round(subtotal * 0.05);
+            costSpan.textContent = installCost.toLocaleString() + ' ₽';
+            updateTotal(installCost);
+        } else {
+            fields.style.display = 'none';
+            row.style.display = 'none';
+            updateTotal(0);
+        }
+    }
+    
+    function updateTotal(installCost) {
+        const total = subtotal + deliveryCost - discount + installCost;
+        document.getElementById('totalAmount').textContent = total.toLocaleString() + ' ₽';
+    }
+    
+    function fillAddress(id, city, address, postal) {
+        document.querySelector('[name="delivery_city"]').value = city;
+        document.querySelector('[name="delivery_address"]').value = address;
+        document.querySelector('[name="delivery_postal_code"]').value = postal;
+    }
+</script>
+{% endblock %}

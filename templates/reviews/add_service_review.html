@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Оценить услугу - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Отзыв об услуге</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4 pb-4 border-bottom">
+                            <p class="mb-1"><strong>Заявка:</strong> #{{ service_request.request_number }}</p>
+                            <p class="mb-1"><strong>Услуга:</strong> {{ service_request.service.name }}</p>
+                            <p class="mb-0"><strong>Мастер:</strong> {{ service_request.technician.user.full_name }}</p>
+                        </div>
+                        
+                        <form method="POST">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label class="form-label">Общая оценка *</label>
+                                <div class="rating-input">
+                                    {% for i in "54321" %}
+                                    <input type="radio" name="rating" value="{{ i }}" id="rating{{ i }}" required>
+                                    <label for="rating{{ i }}"><i class="bi bi-star-fill"></i></label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label class="form-label">Качество работы</label>
+                                    <select name="quality_rating" class="form-select" required>
+                                        <option value="5">5 — Отлично</option>
+                                        <option value="4">4 — Хорошо</option>
+                                        <option value="3">3 — Нормально</option>
+                                        <option value="2">2 — Плохо</option>
+                                        <option value="1">1 — Ужасно</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Пунктуальность</label>
+                                    <select name="punctuality_rating" class="form-select" required>
+                                        <option value="5">5 — Отлично</option>
+                                        <option value="4">4 — Хорошо</option>
+                                        <option value="3">3 — Нормально</option>
+                                        <option value="2">2 — Плохо</option>
+                                        <option value="1">1 — Ужасно</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Общение</label>
+                                    <select name="communication_rating" class="form-select" required>
+                                        <option value="5">5 — Отлично</option>
+                                        <option value="4">4 — Хорошо</option>
+                                        <option value="3">3 — Нормально</option>
+                                        <option value="2">2 — Плохо</option>
+                                        <option value="1">1 — Ужасно</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            {{ form.content|as_crispy_field }}
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-2"></i>Отправить отзыв
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

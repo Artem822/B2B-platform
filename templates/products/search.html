@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Поиск: {{ query }} - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="mb-4">
+            <h1 class="h3">Результаты поиска</h1>
+            <p class="text-muted">
+                По запросу «<strong>{{ query }}</strong>» 
+                {% if products %}найдено {{ products.paginator.count }} товаров{% else %}ничего не найдено{% endif %}
+            </p>
+        </div>
+        
+        {% if products %}
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-lg-3 col-md-4 col-6">
+                {% include 'products/includes/product_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if products.has_other_pages %}
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if products.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?q={{ query }}&page={{ products.previous_page_number }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                {% for num in products.paginator.page_range %}
+                    {% if products.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?q={{ query }}&page={{ products.next_page_number }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <div class="icon"><i class="bi bi-search"></i></div>
+            <h3>Ничего не найдено</h3>
+            <p>Попробуйте изменить поисковый запрос</p>
+            <a href="{% url 'products:product_list' %}" class="btn btn-primary">
+                Перейти в каталог
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{% if object %}Редактировать{% else %}Создать{% endif %} статью{% endblock %}
+{% block page_title %}{% if object %}Редактировать статью{% else %}Новая статья{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/43.0.0/ckeditor5.css">
+{% endblock %}
+
+{% block content %}
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Содержание статьи</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Заголовок *</label>
+                        <input type="text" name="title" class="form-control form-control-lg" 
+                               value="{{ form.title.value|default:'' }}" placeholder="Введите заголовок статьи" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Категория</label>
+                        <select name="category" class="form-select">
+                            <option value="">Без категории</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if form.category.value == cat.id %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Краткое описание</label>
+                        <textarea name="excerpt" class="form-control" rows="3" 
+                                  placeholder="Краткое описание для анонса">{{ form.excerpt.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Содержание *</label>
+                        <textarea name="content" id="editor" class="form-control" rows="15">{{ form.content.value|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Publish -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Публикация</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <select name="status" class="form-select">
+                            <option value="draft" {% if form.status.value == 'draft' %}selected{% endif %}>Черновик</option>
+                            <option value="published" {% if form.status.value == 'published' %}selected{% endif %}>Опубликовано</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_featured" id="isFeatured"
+                               {% if form.is_featured.value %}checked{% endif %}>
+                        <label class="form-check-label" for="isFeatured">Рекомендуемая статья</label>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>
+                            {% if object %}Сохранить{% else %}Опубликовать{% endif %}
+                        </button>
+                        <a href="{% url 'dashboard:post_list' %}" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Image -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Изображение</h6>
+                </div>
+                <div class="card-body">
+                    {% if object and object.image %}
+                    <div class="mb-3">
+                        <img src="{{ object.image.url }}" alt="" class="img-fluid rounded" id="imagePreview">
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                             style="height: 150px;" id="imagePlaceholder">
+                            <i class="bi bi-image text-muted fs-1"></i>
+                        </div>
+                        <img src="" alt="" class="img-fluid rounded d-none" id="imagePreview">
+                    </div>
+                    {% endif %}
+                    
+                    <input type="file" name="image" class="form-control" accept="image/*" onchange="previewImage(this)">
+                </div>
+            </div>
+            
+            <!-- Info -->
+            {% if object %}
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Информация</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Создана:</span>
+                        <span>{{ object.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    {% if object.published_at %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Опубликована:</span>
+                        <span>{{ object.published_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Просмотры:</span>
+                        <span>{{ object.views_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Комментарии:</span>
+                        <span>{{ object.comments.count }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.ckeditor.com/ckeditor5/43.0.0/classic/ckeditor.js"></script>
+<script>
+    ClassicEditor
+        .create(document.querySelector('#editor'), {
+            toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'blockQuote', 'insertTable', 'undo', 'redo']
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('imagePreview');
+                const placeholder = document.getElementById('imagePlaceholder');
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+                if (placeholder) placeholder.classList.add('d-none');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}

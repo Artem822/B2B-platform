@@ -1,0 +1,235 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Заказ #{{ order.order_number }}{% endblock %}
+{% block page_title %}Заказ #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Order Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Информация о заказе</h5>
+                <div>
+                    <span class="status-badge {{ order.status }} me-2">
+                        {{ order.get_status_display }}
+                    </span>
+                    <span class="status-badge {{ order.payment_status }}">
+                        {{ order.get_payment_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Клиент</h6>
+                        <p class="mb-1"><strong>{{ order.contact_name }}</strong></p>
+                        <p class="mb-1">{{ order.contact_phone }}</p>
+                        <p class="mb-0">{{ order.contact_email }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Доставка</h6>
+                        <p class="mb-0">
+                            {{ order.delivery_postal_code }}, {{ order.delivery_city }}<br>
+                            {{ order.delivery_address }}
+                        </p>
+                    </div>
+                </div>
+                
+                {% if order.include_installation %}
+                <hr>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-tools me-2"></i>
+                    <strong>Услуга установки:</strong> 
+                    {{ order.installation_date|date:"d.m.Y" }}
+                    {% if order.installation_notes %}
+                    <br>Примечания: {{ order.installation_notes }}
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if order.customer_notes %}
+                <hr>
+                <h6 class="text-muted mb-2">Комментарий клиента</h6>
+                <p class="mb-0">{{ order.customer_notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Order Items -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Товары в заказе</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Товар</th>
+                            <th class="text-center">Цена</th>
+                            <th class="text-center">Кол-во</th>
+                            <th class="text-end">Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="{{ item.product.main_image.url }}" alt="" 
+                                         class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                    <div>
+                                        <div class="fw-semibold">{{ item.product.name }}</div>
+                                        <small class="text-muted">{{ item.product.sku }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center align-middle">{{ item.price|floatformat:0 }} ₽</td>
+                            <td class="text-center align-middle">{{ item.quantity }}</td>
+                            <td class="text-end align-middle fw-semibold">{{ item.total|floatformat:0 }} ₽</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Order History -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">История изменений</h5>
+            </div>
+            <div class="card-body">
+                <div class="order-status-timeline">
+                    {% for history in order.status_history.all %}
+                    <div class="timeline-item {% if forloop.first %}current{% else %}completed{% endif %}">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="timeline-title">{{ history.get_new_status_display }}</div>
+                                {% if history.comment %}
+                                <div class="text-muted small">{{ history.comment }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="text-end">
+                                <div class="small text-muted">{{ history.created_at|date:"d.m.Y H:i" }}</div>
+                                {% if history.changed_by %}
+                                <small class="text-muted">{{ history.changed_by.full_name }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Order Summary -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Итого</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Товары:</span>
+                    <span>{{ order.subtotal|floatformat:0 }} ₽</span>
+                </div>
+                {% if order.discount > 0 %}
+                <div class="d-flex justify-content-between mb-2 text-success">
+                    <span>Скидка:</span>
+                    <span>-{{ order.discount|floatformat:0 }} ₽</span>
+                </div>
+                {% endif %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Доставка:</span>
+                    <span>{{ order.delivery_cost|floatformat:0 }} ₽</span>
+                </div>
+                {% if order.installation_cost > 0 %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Установка:</span>
+                    <span>{{ order.installation_cost|floatformat:0 }} ₽</span>
+                </div>
+                {% endif %}
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <strong>Итого:</strong>
+                    <strong class="text-primary fs-5">{{ order.total|floatformat:0 }} ₽</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Update Status -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Изменить статус</h5>
+            </div>
+            <div class="card-body">
+                <form action="{% url 'dashboard:order_update_status' order.order_number %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Статус заказа</label>
+                        <select name="status" class="form-select">
+                            {% for value, label in order.STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        <textarea name="comment" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-2"></i>Обновить статус
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Update Payment -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Статус оплаты</h5>
+            </div>
+            <div class="card-body">
+                <form action="{% url 'dashboard:order_update_payment' order.order_number %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <select name="payment_status" class="form-select">
+                            {% for value, label in order.PAYMENT_STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if order.payment_status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        Обновить оплату
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Admin Notes -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Заметки</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <textarea name="admin_notes" class="form-control mb-3" rows="4" 
+                              placeholder="Внутренние заметки...">{{ order.admin_notes }}</textarea>
+                    <button type="submit" class="btn btn-outline-secondary w-100">
+                        Сохранить заметки
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

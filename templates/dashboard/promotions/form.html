@@ -1,0 +1,130 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{% if object %}Редактировать{% else %}Создать{% endif %} акцию{% endblock %}
+{% block page_title %}{% if object %}Редактировать акцию{% else %}Новая акция{% endif %}{% endblock %}
+
+{% block content %}
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Информация об акции</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Название *</label>
+                            <input type="text" name="title" class="form-control" 
+                                   value="{{ form.title.value|default:'' }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">URL (slug) *</label>
+                            <input type="text" name="slug" class="form-control" 
+                                   value="{{ form.slug.value|default:'' }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-4">
+                            <label class="form-label">Тип акции</label>
+                            <select name="type" class="form-select">
+                                <option value="discount" {% if form.type.value == 'discount' %}selected{% endif %}>Скидка на товары</option>
+                                <option value="service" {% if form.type.value == 'service' %}selected{% endif %}>Скидка на услуги</option>
+                                <option value="bundle" {% if form.type.value == 'bundle' %}selected{% endif %}>Комплект</option>
+                                <option value="seasonal" {% if form.type.value == 'seasonal' %}selected{% endif %}>Сезонная</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Скидка (%)</label>
+                            <input type="number" name="discount_percent" class="form-control" 
+                                   value="{{ form.discount_percent.value|default:'' }}" min="1" max="100">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Скидка (₽)</label>
+                            <input type="number" name="discount_amount" class="form-control" 
+                                   value="{{ form.discount_amount.value|default:'' }}" min="0" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Краткое описание *</label>
+                        <textarea name="short_description" class="form-control" rows="2" required>{{ form.short_description.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Полное описание</label>
+                        <textarea name="description" class="form-control" rows="6">{{ form.description.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Условия акции</label>
+                        <textarea name="terms" class="form-control" rows="3">{{ form.terms.value|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Publish -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Публикация</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Начало *</label>
+                            <input type="datetime-local" name="start_date" class="form-control" 
+                                   value="{{ form.start_date.value|date:'Y-m-d\TH:i' }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Окончание *</label>
+                            <input type="datetime-local" name="end_date" class="form-control" 
+                                   value="{{ form.end_date.value|date:'Y-m-d\TH:i' }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="isActive"
+                               {% if form.is_active.value %}checked{% endif %}>
+                        <label class="form-check-label" for="isActive">Активна</label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_featured" id="isFeatured"
+                               {% if form.is_featured.value %}checked{% endif %}>
+                        <label class="form-check-label" for="isFeatured">Показывать на главной</label>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Сохранить
+                        </button>
+                        <a href="{% url 'dashboard:promotion_list' %}" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Image -->
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Изображение</h6>
+                </div>
+                <div class="card-body">
+                    {% if object and object.image %}
+                    <div class="mb-3">
+                        <img src="{{ object.image.url }}" alt="" class="img-fluid rounded">
+                    </div>
+                    {% endif %}
+                    <input type="file" name="image" class="form-control" accept="image/*">
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

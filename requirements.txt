@@ -1,0 +1,11 @@
+Django
+Pillow
+django-crispy-forms
+crispy-bootstrap5
+django-allauth
+python-dotenv
+django-ckeditor-5
+celery
+redis
+django-filter
+unidecode

@@ -1,0 +1,186 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Отзывы{% endblock %}
+{% block page_title %}Отзывы{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if not request.GET.status %}active{% endif %}" href="{% url 'dashboard:review_list' %}">
+            Все
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.GET.status == 'pending' %}active{% endif %}" href="?status=pending">
+            На модерации
+            <span class="badge bg-warning text-dark ms-1">{{ pending_count|default:0 }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.GET.status == 'approved' %}active{% endif %}" href="?status=approved">
+            Одобренные
+        </a>
+    </li>
+</ul>
+
+<!-- Reviews List -->
+<div class="row g-4">
+    {% for review in reviews %}
+    <div class="col-12">
+        <div class="card {% if not review.is_approved %}border-warning{% endif %}">
+            <div class="card-body">
+                <div class="row">
+                    <!-- Product -->
+                    <div class="col-md-3">
+                        <div class="d-flex gap-3">
+                            {% if review.product.main_image %}
+                            <img src="{{ review.product.main_image.url }}" alt="" class="rounded" 
+                                 style="width: 60px; height: 60px; object-fit: cover;">
+                            {% endif %}
+                            <div>
+                                <a href="{{ review.product.get_absolute_url }}" target="_blank" class="fw-semibold text-decoration-none">
+                                    {{ review.product.name|truncatewords:5 }}
+                                </a>
+                                <div class="text-muted small">{{ review.product.sku }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Review Content -->
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="text-warning">
+                                {% for i in "12345" %}
+                                <i class="bi bi-star{% if forloop.counter <= review.rating %}-fill{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            {% if review.is_verified_purchase %}
+                            <span class="badge bg-success">Проверенная покупка</span>
+                            {% endif %}
+                            {% if not review.is_approved %}
+                            <span class="badge bg-warning text-dark">На модерации</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if review.title %}
+                        <h6>{{ review.title }}</h6>
+                        {% endif %}
+                        
+                        <p class="text-muted mb-2">{{ review.content|truncatewords:30 }}</p>
+                        
+                        {% if review.pros or review.cons %}
+                        <div class="small">
+                            {% if review.pros %}
+                            <div class="text-success"><i class="bi bi-plus-circle me-1"></i>{{ review.pros|truncatewords:10 }}</div>
+                            {% endif %}
+                            {% if review.cons %}
+                            <div class="text-danger"><i class="bi bi-dash-circle me-1"></i>{{ review.cons|truncatewords:10 }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Author & Actions -->
+                    <div class="col-md-3 text-end">
+                        <div class="mb-2">
+                            <div class="fw-semibold">{{ review.user.full_name }}</div>
+                            <small class="text-muted">{{ review.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        
+                        <div class="btn-group">
+                            {% if not review.is_approved %}
+                            <button class="btn btn-sm btn-success" onclick="approveReview({{ review.id }})">
+                                <i class="bi bi-check-lg me-1"></i>Одобрить
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-danger" onclick="rejectReview({{ review.id }})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-chat-square-text fs-1 d-block mb-2"></i>
+                Отзывов нет
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if reviews.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if reviews.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ reviews.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in reviews.paginator.page_range %}
+            {% if reviews.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > reviews.number|add:'-3' and num < reviews.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if reviews.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ reviews.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function approveReview(id) {
+        fetch(`/dashboard/reviews/${id}/approve/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function rejectReview(id) {
+        if (confirm('Удалить этот отзыв?')) {
+            fetch(`/dashboard/reviews/${id}/reject/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

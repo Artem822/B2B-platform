@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ promotion.title }} - ServerPro B2B{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<section class="position-relative" style="min-height: 400px;">
+    {% if promotion.banner_image %}
+    <img src="{{ promotion.banner_image.url }}" alt="" class="w-100 h-100 position-absolute" 
+         style="object-fit: cover; top: 0; left: 0;">
+    {% elif promotion.image %}
+    <img src="{{ promotion.image.url }}" alt="" class="w-100 h-100 position-absolute" 
+         style="object-fit: cover; top: 0; left: 0;">
+    {% endif %}
+    <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, rgba(37,99,235,0.9), rgba(124,58,237,0.9)); top: 0;"></div>
+    
+    <div class="container position-relative py-5 text-white">
+        <div class="row align-items-center min-vh-50">
+            <div class="col-lg-8">
+                {% if promotion.discount_percent %}
+                <span class="badge bg-danger fs-5 mb-3">Скидка {{ promotion.discount_percent }}%</span>
+                {% endif %}
+                <h1 class="display-5 fw-bold mb-3">{{ promotion.title }}</h1>
+                <p class="lead opacity-90 mb-4">{{ promotion.short_description }}</p>
+                
+                <!-- Countdown -->
+                <div class="promo-countdown mb-4">
+                    <div class="countdown-item">
+                        <div class="number" id="days">{{ promotion.days_left }}</div>
+                        <div class="label">дней</div>
+                    </div>
+                    <div class="countdown-item">
+                        <div class="number" id="hours">00</div>
+                        <div class="label">часов</div>
+                    </div>
+                    <div class="countdown-item">
+                        <div class="number" id="minutes">00</div>
+                        <div class="label">минут</div>
+                    </div>
+                </div>
+                
+                <a href="#products" class="btn btn-light btn-lg">
+                    <i class="bi bi-bag me-2"></i>Смотреть товары
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-5">
+            <div class="col-lg-8">
+                <!-- Description -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4 class="mb-4">Описание акции</h4>
+                        <div class="content">
+                            {{ promotion.description|safe }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Products -->
+                {% if products %}
+                <div id="products">
+                    <h4 class="mb-4">Товары, участвующие в акции</h4>
+                    <div class="row g-4">
+                        {% for product in products %}
+                        <div class="col-md-4">
+                            {% include 'products/includes/product_card.html' %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Services -->
+                {% if services %}
+                <div class="mt-5">
+                    <h4 class="mb-4">Услуги со скидкой</h4>
+                    <div class="row g-4">
+                        {% for service in services %}
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5>{{ service.name }}</h5>
+                                    <p class="text-muted">{{ service.short_description }}</p>
+                                    <a href="{% url 'services:create_request_for_service' service.slug %}" 
+                                       class="btn btn-outline-primary">Заказать</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Promo Codes -->
+                {% if promo_codes %}
+                <div class="card mb-4 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-ticket-perforated me-2"></i>Промокоды</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for code in promo_codes %}
+                        <div class="d-flex justify-content-between align-items-center {% if not forloop.last %}mb-3 pb-3 border-bottom{% endif %}">
+                            <div>
+                                <code class="fs-5 fw-bold">{{ code.code }}</code>
+                                <div class="small text-muted">
+                                    {% if code.type == 'percent' %}
+                                    Скидка {{ code.value }}%
+                                    {% else %}
+                                    Скидка {{ code.value|floatformat:0 }} ₽
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="copyCode('{{ code.code }}')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Terms -->
+                {% if promotion.terms %}
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">Условия акции</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="small text-muted">
+                            {{ promotion.terms|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Info -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Начало:</span>
+                            <span>{{ promotion.start_date|date:"d.m.Y" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Окончание:</span>
+                            <span>{{ promotion.end_date|date:"d.m.Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyCode(code) {
+        navigator.clipboard.writeText(code);
+        alert('Промокод скопирован: ' + code);
+    }
+    
+    // Countdown timer
+    const endDate = new Date('{{ promotion.end_date|date:"Y-m-d" }}T23:59:59');
+    
+    function updateCountdown() {
+        const now = new Date();
+        const diff = endDate - now;
+        
+        if (diff > 0) {
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            document.getElementById('days').textContent = days;
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+        }
+    }
+    
+    updateCountdown();
+    setInterval(updateCountdown, 60000);
+</script>
+{% endblock %}

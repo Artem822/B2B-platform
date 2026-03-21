@@ -1,0 +1,94 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Акции{% endblock %}
+{% block page_title %}Акции и промокоды{% endblock %}
+
+{% block content %}
+<div class="card table-card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Акции ({{ promotions.paginator.count }})</h5>
+        <a href="{% url 'dashboard:promotion_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Новая акция
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Акция</th>
+                    <th>Тип</th>
+                    <th class="text-center">Скидка</th>
+                    <th class="text-center">Период</th>
+                    <th class="text-center">Статус</th>
+                    <th class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for promo in promotions %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if promo.image %}
+                            <img src="{{ promo.image.url }}" alt="" class="rounded" 
+                                 style="width: 60px; height: 40px; object-fit: cover;">
+                            {% endif %}
+                            <div>
+                                <a href="{% url 'dashboard:promotion_update' promo.pk %}" class="fw-semibold text-decoration-none">
+                                    {{ promo.title }}
+                                </a>
+                                {% if promo.is_featured %}
+                                <span class="badge bg-warning text-dark ms-1">На главной</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark">{{ promo.get_type_display }}</span>
+                    </td>
+                    <td class="text-center">
+                        {% if promo.discount_percent %}
+                        <span class="text-danger fw-bold">-{{ promo.discount_percent }}%</span>
+                        {% elif promo.discount_amount %}
+                        <span class="text-danger fw-bold">-{{ promo.discount_amount|floatformat:0 }} ₽</span>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div>{{ promo.start_date|date:"d.m.Y" }}</div>
+                        <small class="text-muted">{{ promo.end_date|date:"d.m.Y" }}</small>
+                    </td>
+                    <td class="text-center">
+                        {% if promo.is_valid %}
+                        <span class="badge bg-success">Активна</span>
+                        <div class="small text-muted">{{ promo.days_left }} дн.</div>
+                        {% elif promo.start_date > now %}
+                        <span class="badge bg-info">Скоро</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Завершена</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group">
+                            <a href="{% url 'promotions:promotion_detail' promo.slug %}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'dashboard:promotion_update' promo.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="bi bi-percent fs-1 d-block mb-2"></i>
+                        Акций нет
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

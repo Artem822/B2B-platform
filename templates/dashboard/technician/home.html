@@ -1,0 +1,142 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Панель мастера{% endblock %}
+{% block page_title %}Мои заявки{% endblock %}
+
+{% block content %}
+<!-- Today's Schedule -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-calendar-day me-2"></i>Сегодня</h5>
+    </div>
+    <div class="card-body">
+        {% if today_requests %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Время</th>
+                        <th>Заявка</th>
+                        <th>Услуга</th>
+                        <th>Адрес</th>
+                        <th>Клиент</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in today_requests %}
+                    <tr>
+                        <td>
+                            <strong>{{ req.scheduled_time|time:"H:i" }}</strong>
+                        </td>
+                        <td>
+                            <a href="{% url 'dashboard:service_request_detail' req.request_number %}">
+                                #{{ req.request_number|slice:"-8:" }}
+                            </a>
+                        </td>
+                        <td>{{ req.service.name }}</td>
+                        <td>
+                            {{ req.address_city }}, {{ req.address_street|truncatewords:5 }}
+                        </td>
+                        <td>
+                            <div>{{ req.contact_name }}</div>
+                            <a href="tel:{{ req.contact_phone }}">{{ req.contact_phone }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'dashboard:service_request_detail' req.request_number %}" 
+                               class="btn btn-sm btn-primary">Открыть</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-calendar-check fs-1 d-block mb-2"></i>
+            На сегодня заявок нет
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h2 class="mb-0">{{ completed_count }}</h2>
+                <div class="opacity-75">Выполнено заказов</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <h2 class="mb-0">{{ requests.count }}</h2>
+                <div class="opacity-75">Активных заявок</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-star-fill fs-4"></i>
+                    <h2 class="mb-0">{{ rating }}</h2>
+                </div>
+                <div class="opacity-75">Рейтинг</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Requests -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Предстоящие заявки</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Заявка</th>
+                    <th>Услуга</th>
+                    <th>Адрес</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>
+                        {% if req.scheduled_date %}
+                        <div class="fw-semibold">{{ req.scheduled_date|date:"d.m.Y" }}</div>
+                        <small class="text-muted">{{ req.scheduled_time|time:"H:i" }}</small>
+                        {% else %}
+                        <span class="text-muted">Не назначено</span>
+                        {% endif %}
+                    </td>
+                    <td>#{{ req.request_number|slice:"-8:" }}</td>
+                    <td>{{ req.service.name|truncatewords:4 }}</td>
+                    <td>{{ req.address_city }}</td>
+                    <td>
+                        <span class="status-badge {{ req.status }}">{{ req.get_status_display }}</span>
+                    </td>
+                    <td>
+                        <a href="{% url 'dashboard:service_request_detail' req.request_number %}" 
+                           class="btn btn-sm btn-outline-primary">Открыть</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">Нет активных заявок</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

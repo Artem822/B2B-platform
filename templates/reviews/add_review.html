@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Оставить отзыв - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Отзыв о товаре</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Product Info -->
+                        <div class="d-flex gap-3 mb-4 pb-4 border-bottom">
+                            {% if product.main_image %}
+                            <img src="{{ product.main_image.url }}" alt="" class="rounded" 
+                                 style="width: 80px; height: 80px; object-fit: cover;">
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ product.name }}</h6>
+                                <small class="text-muted">{{ product.sku }}</small>
+                                {% if is_verified %}
+                                <div class="mt-1">
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-patch-check me-1"></i>Вы покупали этот товар
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            
+                            <!-- Rating -->
+                            <div class="mb-4">
+                                <label class="form-label">Общая оценка *</label>
+                                <div class="rating-input">
+                                    {% for i in "54321" %}
+                                    <input type="radio" name="rating" value="{{ i }}" id="rating{{ i }}" required>
+                                    <label for="rating{{ i }}"><i class="bi bi-star-fill"></i></label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            {{ form.title|as_crispy_field }}
+                            {{ form.content|as_crispy_field }}
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ form.pros|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.cons|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <!-- Photos -->
+                            <div class="mb-4">
+                                <label class="form-label">Фотографии (до 5 шт.)</label>
+                                <input type="file" name="images" class="form-control" accept="image/*" multiple>
+                            </div>
+                            
+                            <div class="d-flex gap-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send me-2"></i>Отправить отзыв
+                                </button>
+                                <a href="{{ product.get_absolute_url }}" class="btn btn-outline-secondary">Отмена</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

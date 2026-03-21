@@ -1,0 +1,188 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Отчёты{% endblock %}
+{% block page_title %}Отчёты и аналитика{% endblock %}
+
+{% block content %}
+<!-- Period Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex gap-2">
+            <a href="?period=week" class="btn {% if period == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                Неделя
+            </a>
+            <a href="?period=month" class="btn {% if period == 'month' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                Месяц
+            </a>
+            <a href="?period=year" class="btn {% if period == 'year' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                Год
+            </a>
+        </div>
+        <div class="text-muted mt-2">
+            Период: {{ start_date|date:"d.m.Y" }} — сегодня
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="opacity-75">Выручка</div>
+                        <h2 class="mb-0">{{ sales_total|floatformat:0 }} ₽</h2>
+                    </div>
+                    <i class="bi bi-currency-dollar fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="opacity-75">Заказов</div>
+                        <h2 class="mb-0">{{ orders_count }}</h2>
+                    </div>
+                    <i class="bi bi-bag fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="opacity-75">Средний чек</div>
+                        <h2 class="mb-0">{{ avg_order|floatformat:0 }} ₽</h2>
+                    </div>
+                    <i class="bi bi-receipt fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Динамика продаж</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">По категориям</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popular Products -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Популярные товары</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Товар</th>
+                    <th class="text-center">Продано</th>
+                    <th class="text-end">Сумма</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in popular_products %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <a href="{% url 'dashboard:product_update' item.product__id %}">
+                            {{ item.product__name }}
+                        </a>
+                    </td>
+                    <td class="text-center">{{ item.total_qty }} шт.</td>
+                    <td class="text-end fw-semibold">{{ item.total_sum|floatformat:0 }} ₽</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">Нет данных</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Sales Chart
+    new Chart(document.getElementById('salesChart'), {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Выручка',
+                data: {{ chart_data|safe }},
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' ₽';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Category Chart
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: [{% for item in category_stats %}'{{ item.product__category__name }}',{% endfor %}],
+            datasets: [{
+                data: [{% for item in category_stats %}{{ item.total }},{% endfor %}],
+                backgroundColor: ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Удаление товара{% endblock %}
+{% block page_title %}Удаление товара{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="text-danger mb-4">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 4rem;"></i>
+                </div>
+                
+                <h4 class="mb-3">Удалить товар?</h4>
+                
+                <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
+                    {% if object.main_image %}
+                    <img src="{{ object.main_image.url }}" alt="" class="rounded" 
+                         style="width: 80px; height: 80px; object-fit: cover;">
+                    {% endif %}
+                    <div class="text-start">
+                        <div class="fw-semibold">{{ object.name }}</div>
+                        <small class="text-muted">{{ object.sku }}</small>
+                    </div>
+                </div>
+                
+                <p class="text-muted mb-4">
+                    Это действие нельзя отменить. Товар будет удалён из каталога.
+                </p>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'dashboard:product_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Отмена
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Удалить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

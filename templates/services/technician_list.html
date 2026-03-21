@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Наши мастера - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h1>Наши мастера</h1>
+            <p class="text-muted">Сертифицированные специалисты с опытом работы</p>
+        </div>
+        
+        <!-- Filter -->
+        <div class="text-center mb-4">
+            <a href="{% url 'services:technician_list' %}" class="btn {% if not request.GET.category %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                Все
+            </a>
+            {% for cat in categories %}
+            <a href="?category={{ cat.slug }}" class="btn {% if request.GET.category == cat.slug %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+        
+        <div class="row g-4">
+            {% for tech in technicians %}
+            <div class="col-lg-3 col-md-4 col-6">
+                <div class="card technician-card h-100">
+                    <div class="card-body">
+                        {% if tech.user.avatar %}
+                        <img src="{{ tech.user.avatar.url }}" alt="" class="technician-avatar">
+                        {% else %}
+                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                             style="width: 120px; height: 120px; font-size: 3rem;">
+                            {{ tech.user.first_name|slice:":1"|upper }}
+                        </div>
+                        {% endif %}
+                        <h5 class="technician-name">{{ tech.user.full_name }}</h5>
+                        <p class="technician-specialization">
+                            {% for spec in tech.specializations.all|slice:":2" %}
+                                {{ spec.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                        <div class="technician-rating">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <span class="fw-bold">{{ tech.rating }}</span>
+                        </div>
+                        <div class="technician-stats mt-3">
+                            <div>
+                                <div class="fw-bold">{{ tech.experience_years }}</div>
+                                <small class="text-muted">лет опыта</small>
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ tech.completed_orders }}</div>
+                                <small class="text-muted">заказов</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-people text-muted" style="font-size: 4rem;"></i>
+                <h5 class="mt-3">Мастера не найдены</h5>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

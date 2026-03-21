@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if address %}Редактировать{% else %}Добавить{% endif %} адрес - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-geo-alt me-2 text-primary"></i>
+                            {% if address %}Редактировать адрес{% else %}Новый адрес{% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                {{ form.title|as_crispy_field }}
+                                <small class="text-muted">Например: Офис, Склад, Дом</small>
+                            </div>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    {{ form.city|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.postal_code|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mt-1">
+                                <div class="col-md-6">
+                                    {{ form.street|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3">
+                                    {{ form.building|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3">
+                                    {{ form.office|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mt-3">
+                                <input type="checkbox" name="is_default" id="is_default" class="form-check-input"
+                                       {% if form.is_default.value %}checked{% endif %}>
+                                <label for="is_default" class="form-check-label">
+                                    Использовать по умолчанию
+                                </label>
+                            </div>
+                            
+                            <div class="d-flex gap-3 mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>Сохранить
+                                </button>
+                                <a href="{% url 'accounts:address_list' %}" class="btn btn-outline-secondary">
+                                    Отмена
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

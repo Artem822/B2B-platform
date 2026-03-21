@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Корзина - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Главная</a></li>
+                <li class="breadcrumb-item active">Корзина</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <h1 class="mb-4">Корзина</h1>
+        
+        {% if cart %}
+        <div class="row g-4">
+            <!-- Cart Items -->
+            <div class="col-lg-8">
+                <div class="cart-table">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%">Товар</th>
+                                <th class="text-center">Цена</th>
+                                <th class="text-center">Количество</th>
+                                <th class="text-center">Сумма</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="{{ item.product.main_image.url }}" 
+                                             alt="{{ item.product.name }}"
+                                             class="cart-item-image">
+                                        <div>
+                                            <a href="{{ item.product.get_absolute_url }}" class="cart-item-title">
+                                                {{ item.product.name }}
+                                            </a>
+                                            <div class="text-muted small">
+                                                Артикул: {{ item.product.sku }}
+                                            </div>
+                                            {% if item.product.available_stock < item.quantity %}
+                                            <div class="text-danger small">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                Доступно только {{ item.product.available_stock }} шт.
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <span class="fw-semibold">{{ item.price|floatformat:0 }} ₽</span>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <form action="{% url 'orders:cart_update' item.product.id %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <div class="quantity-selector justify-content-center">
+                                            <button type="button" onclick="this.parentNode.querySelector('input').stepDown(); this.form.submit();">-</button>
+                                            <input type="number" name="quantity" value="{{ item.quantity }}" 
+                                                   min="1" max="{{ item.product.available_stock }}"
+                                                   onchange="this.form.submit()">
+                                            <button type="button" onclick="this.parentNode.querySelector('input').stepUp(); this.form.submit();">+</button>
+                                        </div>
+                                    </form>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <span class="fw-bold text-primary">{{ item.total_price|floatformat:0 }} ₽</span>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <a href="{% url 'orders:cart_remove' item.product.id %}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Удалить товар из корзины?')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Continue Shopping -->
+                <div class="mt-3">
+                    <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Продолжить покупки
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Cart Summary -->
+            <div class="col-lg-4">
+                <div class="cart-summary">
+                    <h4><i class="bi bi-receipt me-2"></i>Итого</h4>
+                    
+                    <div class="summary-row">
+                        <span>Товаров в корзине:</span>
+                        <span>{{ cart|length }} шт.</span>
+                    </div>
+                    
+                    <div class="summary-row">
+                        <span>Сумма товаров:</span>
+                        <span>{{ cart.get_total_price|floatformat:0 }} ₽</span>
+                    </div>
+                    
+                    {% if cart.get_total_price < 50000 %}
+                    <div class="summary-row">
+                        <span>Доставка:</span>
+                        <span>500 ₽</span>
+                    </div>
+                    <div class="alert alert-info small mt-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        До бесплатной доставки осталось: 
+                        <strong>{{ 50000|add:cart.get_total_price|floatformat:0 }} ₽</strong>
+                    </div>
+                    {% else %}
+                    <div class="summary-row text-success">
+                        <span>Доставка:</span>
+                        <span>Бесплатно</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="summary-row total">
+                        <span>Итого к оплате:</span>
+                        <span class="text-primary">
+                            {% if cart.get_total_price < 50000 %}
+                                {{ cart.get_total_price|add:500|floatformat:0 }} ₽
+                            {% else %}
+                                {{ cart.get_total_price|floatformat:0 }} ₽
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <!-- Promo Code -->
+                    <div class="mt-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Промокод">
+                            <button class="btn btn-outline-primary">Применить</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Checkout Button -->
+                    <div class="d-grid mt-4">
+                        <a href="{% url 'orders:checkout' %}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-credit-card me-2"></i>Оформить заказ
+                        </a>
+                    </div>
+                    
+                    <!-- Payment Methods -->
+                    <div class="text-center mt-4">
+                        <small class="text-muted d-block mb-2">Принимаем к оплате:</small>
+                        <div class="d-flex justify-content-center gap-2">
+                            <i class="bi bi-credit-card-2-front fs-4 text-muted"></i>
+                            <i class="bi bi-wallet2 fs-4 text-muted"></i>
+                            <i class="bi bi-bank fs-4 text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Help -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6><i class="bi bi-question-circle me-2"></i>Нужна помощь?</h6>
+                        <p class="small text-muted mb-2">
+                            Наши менеджеры готовы помочь с оформлением заказа
+                        </p>
+                        <a href="tel:+78001234567" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-telephone me-2"></i>8 (800) 123-45-67
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Empty Cart -->
+        <div class="empty-state">
+            <div class="icon">
+                <i class="bi bi-cart-x"></i>
+            </div>
+            <h3>Корзина пуста</h3>
+            <p>Добавьте товары, чтобы оформить заказ</p>
+            <a href="{% url 'products:product_list' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-grid me-2"></i>Перейти в каталог
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

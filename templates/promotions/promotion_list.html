@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Акции - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-gradient-primary text-white">
+    <div class="container text-center">
+        <h1>Акции и специальные предложения</h1>
+        <p class="lead opacity-75">Выгодные условия для вашего бизнеса</p>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        {% if promotions %}
+        <div class="row g-4">
+            {% for promo in promotions %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 hover-lift">
+                    {% if promo.image %}
+                    <div class="position-relative">
+                        <img src="{{ promo.image.url }}" class="card-img-top" alt="{{ promo.title }}" 
+                             style="height: 200px; object-fit: cover;">
+                        {% if promo.discount_percent %}
+                        <span class="position-absolute top-0 end-0 m-3 badge bg-danger fs-6">
+                            -{{ promo.discount_percent }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <span class="badge bg-primary mb-2">{{ promo.get_type_display }}</span>
+                        <h5 class="card-title">{{ promo.title }}</h5>
+                        <p class="card-text text-muted">{{ promo.short_description|truncatewords:20 }}</p>
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                {% if promo.days_left > 0 %}
+                                Осталось {{ promo.days_left }} дн.
+                                {% else %}
+                                Последний день!
+                                {% endif %}
+                            </small>
+                            <a href="{% url 'promotions:promotion_detail' promo.slug %}" class="btn btn-primary btn-sm">
+                                Подробнее
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon"><i class="bi bi-percent"></i></div>
+            <h3>Акций пока нет</h3>
+            <p>Следите за обновлениями — скоро появятся выгодные предложения!</p>
+        </div>
+        {% endif %}
+        
+        {% if upcoming %}
+        <div class="mt-5">
+            <h3 class="mb-4">Скоро начнутся</h3>
+            <div class="row g-4">
+                {% for promo in upcoming %}
+                <div class="col-md-4">
+                    <div class="card border-dashed">
+                        <div class="card-body text-center">
+                            <span class="badge bg-info mb-2">Скоро</span>
+                            <h5>{{ promo.title }}</h5>
+                            <p class="text-muted small">Начало: {{ promo.start_date|date:"d.m.Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

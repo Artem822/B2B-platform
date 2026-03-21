@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Блог - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="breadcrumb-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="h2 mb-0">Блог</h1>
+            </div>
+            <div class="col-md-6">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-md-end mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Главная</a></li>
+                        <li class="breadcrumb-item active">Блог</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Featured Posts -->
+                {% if featured_posts and not current_category and not current_tag %}
+                <div class="mb-5">
+                    <div class="row g-4">
+                        {% for post in featured_posts %}
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm overflow-hidden">
+                                <div class="row g-0">
+                                    <div class="col-md-6">
+                                        {% if post.image %}
+                                        <img src="{{ post.image.url }}" alt="{{ post.title }}" 
+                                             class="w-100 h-100" style="object-fit: cover; min-height: 250px;">
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card-body p-4">
+                                            <span class="badge bg-primary mb-2">{{ post.category.name }}</span>
+                                            <h4 class="card-title">
+                                                <a href="{{ post.get_absolute_url }}" class="text-dark text-decoration-none">
+                                                    {{ post.title }}
+                                                </a>
+                                            </h4>
+                                            <p class="card-text text-muted">{{ post.excerpt|truncatewords:30 }}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar me-1"></i>
+                                                    {{ post.published_at|date:"d.m.Y" }}
+                                                </small>
+                                                <a href="{{ post.get_absolute_url }}" class="btn btn-primary btn-sm">
+                                                    Читать далее
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- All Posts -->
+                <div class="row g-4">
+                    {% for post in posts %}
+                    <div class="col-md-6">
+                        <div class="card blog-card h-100">
+                            {% if post.image %}
+                            <a href="{{ post.get_absolute_url }}">
+                                <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
+                            </a>
+                            {% endif %}
+                            <div class="card-body">
+                                <div class="blog-meta">
+                                    <span><i class="bi bi-folder me-1"></i>{{ post.category.name }}</span>
+                                    <span><i class="bi bi-calendar me-1"></i>{{ post.published_at|date:"d.m.Y" }}</span>
+                                </div>
+                                <h5 class="card-title">
+                                    <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
+                                </h5>
+                                <p class="card-text">{{ post.excerpt|truncatewords:20 }}</p>
+                            </div>
+                            <div class="card-footer bg-white border-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-eye me-1"></i>{{ post.views_count }}
+                                    </small>
+                                    <a href="{{ post.get_absolute_url }}" class="text-primary text-decoration-none">
+                                        Читать <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <div class="icon"><i class="bi bi-journal-x"></i></div>
+                            <h3>Статьи не найдены</h3>
+                            <p>Попробуйте изменить параметры поиска</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Search -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Поиск</h5>
+                        <form action="" method="GET">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Поиск статей..." value="{{ request.GET.search }}">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Categories -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Категории</h5>
+                        <ul class="list-unstyled mb-0">
+                            {% for category in categories %}
+                            <li class="mb-2">
+                                <a href="?category={{ category.slug }}" 
+                                   class="text-decoration-none d-flex justify-content-between {% if current_category == category.slug %}text-primary fw-bold{% else %}text-dark{% endif %}">
+                                    <span>{{ category.name }}</span>
+                                    <span class="badge bg-light text-dark">{{ category.posts.count }}</span>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Tags -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Теги</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for tag in tags %}
+                            <a href="?tag={{ tag.slug }}" 
+                               class="badge {% if current_tag == tag.slug %}bg-primary{% else %}bg-light text-dark{% endif %} text-decoration-none">
+                                {{ tag.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Newsletter -->
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Подписка на новости</h5>
+                        <p class="small opacity-75">Получайте свежие статьи и акции на почту</p>
+                        <form>
+                            <div class="mb-3">
+                                <input type="email" class="form-control" placeholder="Ваш email">
+                            </div>
+                            <button class="btn btn-light w-100">Подписаться</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Товары{% endblock %}
+{% block page_title %}Товары{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Поиск</label>
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Название или артикул" value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Категория</label>
+                <select name="category" class="form-select">
+                    <option value="">Все категории</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"i" %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Остаток</label>
+                <select name="stock" class="form-select">
+                    <option value="">Все</option>
+                    <option value="low" {% if request.GET.stock == 'low' %}selected{% endif %}>Мало (&lt;5)</option>
+                    <option value="out" {% if request.GET.stock == 'out' %}selected{% endif %}>Нет в наличии</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i>
+                </button>
+                <a href="{% url 'dashboard:product_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="card table-card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Всего товаров: {{ products.paginator.count }}</h5>
+        <a href="{% url 'dashboard:product_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Добавить товар
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">
+                        <input type="checkbox" class="form-check-input" id="selectAll">
+                    </th>
+                    <th>Товар</th>
+                    <th>Категория</th>
+                    <th class="text-center">Цена</th>
+                    <th class="text-center">Остаток</th>
+                    <th class="text-center">Статус</th>
+                    <th class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>
+                        <input type="checkbox" class="form-check-input" name="selected" value="{{ product.id }}">
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if product.main_image %}
+                            <img src="{{ product.main_image.url }}" alt="" 
+                                 class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                 style="width: 50px; height: 50px;">
+                                <i class="bi bi-image text-muted"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <a href="{% url 'dashboard:product_update' product.pk %}" class="fw-semibold text-decoration-none">
+                                    {{ product.name|truncatewords:5 }}
+                                </a>
+                                <div class="text-muted small">{{ product.sku }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark">{{ product.category.name }}</span>
+                    </td>
+                    <td class="text-center">
+                        <div class="fw-semibold">{{ product.price|floatformat:0 }} ₽</div>
+                        {% if product.old_price %}
+                        <small class="text-muted text-decoration-line-through">{{ product.old_price|floatformat:0 }} ₽</small>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            {% if product.stock == 0 %}
+                            <span class="badge bg-danger">Нет</span>
+                            {% elif product.stock < 5 %}
+                            <span class="badge bg-warning text-dark">{{ product.stock }}</span>
+                            {% else %}
+                            <span class="badge bg-success">{{ product.stock }}</span>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-secondary" 
+                                    onclick="showStockModal({{ product.id }}, {{ product.stock }})"
+                                    data-bs-toggle="tooltip" title="Изменить остаток">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        {% if product.is_active %}
+                        <span class="badge bg-success">Активен</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Скрыт</span>
+                        {% endif %}
+                        {% if product.is_featured %}
+                        <span class="badge bg-primary">Рекомендуемый</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group">
+                            <a href="{{ product.get_absolute_url }}" class="btn btn-sm btn-outline-secondary" 
+                               target="_blank" data-bs-toggle="tooltip" title="Смотреть на сайте">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'dashboard:product_update' product.pk %}" class="btn btn-sm btn-outline-primary"
+                               data-bs-toggle="tooltip" title="Редактировать">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="confirmDelete({{ product.id }}, '{{ product.name|escapejs }}')"
+                                    data-bs-toggle="tooltip" title="Удалить">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-box-seam fs-1 d-block mb-2"></i>
+                        Товары не найдены
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if products.has_other_pages %}
+    <div class="card-footer bg-white">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if products.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in products.paginator.page_range %}
+                    {% if products.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Stock Modal -->
+<div class="modal fade" id="stockModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Изменить остаток</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="stockForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <label class="form-label">Количество на складе</label>
+                    <input type="number" name="stock" id="stockInput" class="form-control" min="0" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Удаление товара</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить товар <strong id="deleteProductName"></strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <a href="#" id="deleteConfirmBtn" class="btn btn-danger">Удалить</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Stock Modal
+    function showStockModal(productId, currentStock) {
+        document.getElementById('stockInput').value = currentStock;
+        document.getElementById('stockForm').action = `/dashboard/products/${productId}/stock/`;
+        new bootstrap.Modal(document.getElementById('stockModal')).show();
+    }
+    
+    // Delete Modal
+    function confirmDelete(productId, productName) {
+        document.getElementById('deleteProductName').textContent = productName;
+        document.getElementById('deleteConfirmBtn').href = `/dashboard/products/${productId}/delete/`;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+    
+    // Select All
+    document.getElementById('selectAll').addEventListener('change', function() {
+        document.querySelectorAll('input[name="selected"]').forEach(cb => {
+            cb.checked = this.checked;
+        });
+    });
+</script>
+{% endblock %}

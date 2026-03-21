@@ -1,0 +1,125 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Статьи{% endblock %}
+{% block page_title %}Статьи блога{% endblock %}
+
+{% block content %}
+<div class="card table-card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Статьи ({{ posts.paginator.count }})</h5>
+        <a href="{% url 'dashboard:post_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Новая статья
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Статья</th>
+                    <th>Категория</th>
+                    <th>Автор</th>
+                    <th class="text-center">Просмотры</th>
+                    <th class="text-center">Статус</th>
+                    <th class="text-center">Дата</th>
+                    <th class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for post in posts %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if post.image %}
+                            <img src="{{ post.image.url }}" alt="" class="rounded" 
+                                 style="width: 60px; height: 40px; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                 style="width: 60px; height: 40px;">
+                                <i class="bi bi-image text-muted"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <a href="{% url 'dashboard:post_update' post.pk %}" class="fw-semibold text-decoration-none">
+                                    {{ post.title|truncatewords:8 }}
+                                </a>
+                                {% if post.is_featured %}
+                                <span class="badge bg-warning text-dark ms-1">Рекомендуемая</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark">{{ post.category.name|default:"—" }}</span>
+                    </td>
+                    <td>{{ post.author.full_name|default:"—" }}</td>
+                    <td class="text-center">
+                        <i class="bi bi-eye text-muted me-1"></i>{{ post.views_count }}
+                    </td>
+                    <td class="text-center">
+                        {% if post.status == 'published' %}
+                        <span class="badge bg-success">Опубликована</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Черновик</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if post.published_at %}
+                        {{ post.published_at|date:"d.m.Y" }}
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group">
+                            <a href="{{ post.get_absolute_url }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'dashboard:post_update' post.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-journal-text fs-1 d-block mb-2"></i>
+                        Статей нет
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if posts.has_other_pages %}
+    <div class="card-footer bg-white">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if posts.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ posts.previous_page_number }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                {% for num in posts.paginator.page_range %}
+                    {% if posts.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if posts.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ posts.next_page_number }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

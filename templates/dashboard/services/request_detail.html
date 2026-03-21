@@ -1,0 +1,253 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Заявка #{{ request.request_number }}{% endblock %}
+{% block page_title %}Заявка #{{ request.request_number }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Request Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Информация о заявке</h5>
+                <div>
+                    <span class="status-badge {{ request.status }}">{{ request.get_status_display }}</span>
+                    {% if request.urgency == 'emergency' %}
+                    <span class="badge bg-danger ms-2">Экстренная</span>
+                    {% elif request.urgency == 'urgent' %}
+                    <span class="badge bg-warning text-dark ms-2">Срочная</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Услуга</h6>
+                        <p class="fw-semibold mb-1">{{ request.service.name }}</p>
+                        <p class="text-muted small mb-0">{{ request.service.category.name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Предварительная стоимость</h6>
+                        <p class="fs-4 fw-bold text-primary mb-0">{{ request.estimated_cost|floatformat:0 }} ₽</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6 class="text-muted">Описание проблемы</h6>
+                <h5>{{ request.title }}</h5>
+                <p class="mb-0">{{ request.description }}</p>
+                
+                {% if request.photo1 or request.photo2 or request.photo3 %}
+                <hr>
+                <h6 class="text-muted">Фотографии</h6>
+                <div class="d-flex gap-2">
+                    {% if request.photo1 %}
+                    <a href="{{ request.photo1.url }}" target="_blank">
+                        <img src="{{ request.photo1.url }}" alt="" class="rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                    </a>
+                    {% endif %}
+                    {% if request.photo2 %}
+                    <a href="{{ request.photo2.url }}" target="_blank">
+                        <img src="{{ request.photo2.url }}" alt="" class="rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                    </a>
+                    {% endif %}
+                    {% if request.photo3 %}
+                    <a href="{{ request.photo3.url }}" target="_blank">
+                        <img src="{{ request.photo3.url }}" alt="" class="rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Client & Address -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="bi bi-person me-2"></i>Клиент</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="fw-semibold mb-1">{{ request.contact_name }}</p>
+                        <p class="mb-1">
+                            <i class="bi bi-telephone me-2 text-muted"></i>
+                            <a href="tel:{{ request.contact_phone }}">{{ request.contact_phone }}</a>
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-envelope me-2 text-muted"></i>
+                            <a href="mailto:{{ request.contact_email }}">{{ request.contact_email }}</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Адрес</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1"><strong>{{ request.address_city }}</strong></p>
+                        <p class="mb-0">{{ request.address_street }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">История изменений</h5>
+            </div>
+            <div class="card-body">
+                <div class="order-status-timeline">
+                    {% for history in request.status_history.all %}
+                    <div class="timeline-item {% if forloop.first %}current{% else %}completed{% endif %}">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="timeline-title">{{ history.get_new_status_display }}</div>
+                                {% if history.comment %}
+                                <div class="text-muted small">{{ history.comment }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="text-end">
+                                <div class="small text-muted">{{ history.created_at|date:"d.m.Y H:i" }}</div>
+                                {% if history.changed_by %}
+                                <small class="text-muted">{{ history.changed_by.full_name }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Update Request -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Управление заявкой</h5>
+            </div>
+            <div class="card-body">
+                <form action="{% url 'dashboard:service_request_update' request.request_number %}" method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <select name="status" class="form-select">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if request.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Мастер</label>
+                        <select name="technician" class="form-select">
+                            <option value="">Не назначен</option>
+                            {% for tech in technicians %}
+                            <option value="{{ tech.id }}" {% if request.technician_id == tech.id %}selected{% endif %}>
+                                {{ tech.user.full_name }} ({{ tech.rating }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label class="form-label">Дата выезда</label>
+                            <input type="date" name="scheduled_date" class="form-control" 
+                                   value="{{ request.scheduled_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label">Время</label>
+                            <input type="time" name="scheduled_time" class="form-control"
+                                   value="{{ request.scheduled_time|time:'H:i' }}">
+                        </div>
+                    </div>
+                    
+                    {% if request.status == 'in_progress' or request.status == 'completed' %}
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Часов</label>
+                            <input type="number" name="hours_worked" class="form-control" 
+                                   value="{{ request.hours_worked }}" step="0.5" min="0">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Итого ₽</label>
+                            <input type="number" name="final_cost" class="form-control" 
+                                   value="{{ request.final_cost|floatformat:0 }}" min="0">
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        <textarea name="comment" class="form-control" rows="2"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-2"></i>Сохранить
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Dates -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Даты</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Создана:</span>
+                    <span>{{ request.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Желаемая дата:</span>
+                    <span>{{ request.preferred_date|date:"d.m.Y" }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Время:</span>
+                    <span>{{ request.preferred_time_from|time:"H:i" }} - {{ request.preferred_time_to|time:"H:i" }}</span>
+                </div>
+                {% if request.scheduled_date %}
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Назначено:</span>
+                    <span class="fw-semibold">{{ request.scheduled_date|date:"d.m.Y" }} {{ request.scheduled_time|time:"H:i" }}</span>
+                </div>
+                {% endif %}
+                {% if request.completed_at %}
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Завершена:</span>
+                    <span class="text-success">{{ request.completed_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Admin Notes -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Заметки администратора</h6>
+            </div>
+            <div class="card-body">
+                <form action="{% url 'dashboard:service_request_update' request.request_number %}" method="POST">
+                    {% csrf_token %}
+                    <textarea name="admin_notes" class="form-control mb-2" rows="4">{{ request.admin_notes }}</textarea>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100">Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

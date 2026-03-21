@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ServerPro B2B - Серверное оборудование{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6" data-aos="fade-right">
+                <span class="badge bg-warning text-dark mb-3">
+                    <i class="bi bi-lightning-fill me-1"></i>Быстрая доставка по России
+                </span>
+                <h1>Профессиональное серверное оборудование для бизнеса</h1>
+                <p class="lead opacity-90 mb-4">
+                    Широкий выбор серверов, комплектующих и услуг по установке и настройке. 
+                    Гарантия качества и техническая поддержка 24/7.
+                </p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{% url 'products:product_list' %}" class="btn btn-light btn-lg">
+                        <i class="bi bi-grid me-2"></i>Каталог товаров
+                    </a>
+                    <a href="{% url 'services:create_request' %}" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-tools me-2"></i>Вызвать мастера
+                    </a>
+                </div>
+                
+                <!-- Stats -->
+                <div class="row mt-5">
+                    <div class="col-4">
+                        <div class="stat-number">10+</div>
+                        <div class="opacity-75">лет на рынке</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-number">5000+</div>
+                        <div class="opacity-75">клиентов</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-number">50000+</div>
+                        <div class="opacity-75">заказов</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block" data-aos="fade-left">
+                <img src="{% static 'images/hero-server.png' %}" alt="Server" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="feature-card">
+                    <div class="icon-box">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h5>Быстрая доставка</h5>
+                    <p class="text-muted mb-0">По всей России от 1 дня</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-card">
+                    <div class="icon-box">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h5>Гарантия</h5>
+                    <p class="text-muted mb-0">До 3 лет на оборудование</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-card">
+                    <div class="icon-box">
+                        <i class="bi bi-headset"></i>
+                    </div>
+                    <h5>Поддержка 24/7</h5>
+                    <p class="text-muted mb-0">Всегда на связи</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-card">
+                    <div class="icon-box">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <h5>Установка</h5>
+                    <p class="text-muted mb-0">Профессиональный монтаж</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title" data-aos="fade-up">Категории товаров</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                Выберите нужную категорию оборудования
+            </p>
+        </div>
+        
+        <div class="row g-4">
+            {% for category in categories %}
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
+                <a href="{% url 'products:category' category.slug %}" class="text-decoration-none">
+                    <div class="category-card">
+                        {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                        {% else %}
+                        <img src="{% static 'images/category-placeholder.jpg' %}" alt="{{ category.name }}">
+                        {% endif %}
+                        <div class="overlay">
+                            <h5>{{ category.name }}</h5>
+                            <span>{{ category.products.count }} товаров</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="section-title mb-0" data-aos="fade-right">Рекомендуемые товары</h2>
+            </div>
+            <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary" data-aos="fade-left">
+                Все товары <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+        
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
+                {% include 'products/includes/product_card.html' %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <div class="icon"><i class="bi bi-box"></i></div>
+                    <h3>Товары скоро появятся</h3>
+                    <p>Мы работаем над пополнением каталога</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- New Products -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="section-title mb-0" data-aos="fade-right">Новинки</h2>
+            </div>
+            <a href="{% url 'products:product_list' %}?sort=-created_at" class="btn btn-outline-primary" data-aos="fade-left">
+                Все новинки <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+        
+        <div class="row g-4">
+            {% for product in new_products %}
+            <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
+                {% include 'products/includes/product_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Services CTA -->
+<section class="py-5 bg-dark text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right">
+                <h2 class="mb-3">Нужна профессиональная установка?</h2>
+                <p class="lead opacity-75 mb-4">
+                    Наши специалисты выполнят установку, настройку и обслуживание 
+                    любого серверного оборудования. Работаем по всей России.
+                </p>
+                <ul class="list-unstyled mb-4">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Выезд мастера в течение 24 часов
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Гарантия на все работы
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Сертифицированные специалисты
+                    </li>
+                </ul>
+                <a href="{% url 'services:service_list' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-tools me-2"></i>Заказать услугу
+                </a>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="row g-4">
+                    <div class="col-6">
+                        <div class="card bg-primary border-0 text-white">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-hdd-rack fs-1 mb-3"></i>
+                                <h5>Установка серверов</h5>
+                                <p class="mb-0 opacity-75">от 5 000 ₽</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-success border-0 text-white">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-gear fs-1 mb-3"></i>
+                                <h5>Настройка</h5>
+                                <p class="mb-0 opacity-75">от 3 000 ₽</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-info border-0 text-white">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-wrench-adjustable fs-1 mb-3"></i>
+                                <h5>Обслуживание</h5>
+                                <p class="mb-0 opacity-75">от 2 000 ₽/мес</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-warning border-0 text-dark">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-lightning fs-1 mb-3"></i>
+                                <h5>Срочный ремонт</h5>
+                                <p class="mb-0 opacity-75">от 4 000 ₽</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Brands -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h2 class="section-title" data-aos="fade-up">Наши партнёры</h2>
+        </div>
+        <div class="row align-items-center justify-content-center g-4">
+            {% for brand in brands %}
+            <div class="col-6 col-md-4 col-lg-2 text-center" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}0">
+                {% if brand.logo %}
+                <img src="{{ brand.logo.url }}" alt="{{ brand.name }}" class="img-fluid" style="max-height: 50px; filter: grayscale(100%); opacity: 0.7; transition: all 0.3s;">
+                {% else %}
+                <span class="fw-bold text-muted">{{ brand.name }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Promotions -->
+{% if active_promotions %}
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title" data-aos="fade-up">Актуальные акции</h2>
+        </div>
+        
+        <div class="row g-4">
+            {% for promo in active_promotions %}
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
+                <div class="promo-banner">
+                    {% if promo.image %}
+                    <img src="{{ promo.image.url }}" alt="{{ promo.title }}">
+                    {% endif %}
+                    <div class="overlay"></div>
+                    <div class="content">
+                        {% if promo.discount_percent %}
+                        <span class="promo-badge">-{{ promo.discount_percent }}%</span>
+                        {% endif %}
+                        <h4>{{ promo.title }}</h4>
+                        <p class="opacity-75">{{ promo.short_description|truncatewords:15 }}</p>
+                        <a href="{% url 'promotions:promotion_detail' promo.slug %}" class="btn btn-light">
+                            Подробнее
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Testimonials -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title" data-aos="fade-up">Отзывы клиентов</h2>
+            <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                Что говорят о нас наши клиенты
+            </p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="content">
+                        "Отличный сервис! Заказывали сервер для офиса, доставили быстро, 
+                        установили профессионально. Рекомендую!"
+                    </p>
+                    <div class="author">
+                        <img src="{% static 'images/avatar-1.jpg' %}" alt="">
+                        <div class="author-info">
+                            <h6>Алексей Петров</h6>
+                            <span>IT-директор, ООО "ТехноСофт"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="content">
+                        "Работаем с ServerPro уже 3 года. Всегда качественное оборудование, 
+                        адекватные цены и оперативная поддержка."
+                    </p>
+                    <div class="author">
+                        <img src="{% static 'images/avatar-2.jpg' %}" alt="">
+                        <div class="author-info">
+                            <h6>Мария Сидорова</h6>
+                            <span>Системный администратор</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-half"></i>
+                    </div>
+                    <p class="content">
+                        "Срочно нужен был ремонт сервера. Мастер приехал в тот же день 
+                        и решил проблему. Спасибо за оперативность!"
+                    </p>
+                    <div class="author">
+                        <img src="{% static 'images/avatar-3.jpg' %}" alt="">
+                        <div class="author-info">
+                            <h6>Дмитрий Козлов</h6>
+                            <span>Владелец бизнеса</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Blog Preview -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="section-title mb-0" data-aos="fade-right">Блог</h2>
+            </div>
+            <a href="{% url 'blog:post_list' %}" class="btn btn-outline-primary" data-aos="fade-left">
+                Все статьи <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Blog posts will be here -->
+        </div>
+    </div>
+</section>
+{% endblock %}

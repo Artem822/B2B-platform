@@ -1,0 +1,229 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Заявки на услуги{% endblock %}
+{% block page_title %}Заявки на услуги{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Статус</label>
+                <select name="status" class="form-select">
+                    <option value="">Все статусы</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Срочность</label>
+                <select name="urgency" class="form-select">
+                    <option value="">Любая</option>
+                    {% for value, label in urgency_choices %}
+                    <option value="{{ value }}" {% if request.GET.urgency == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Мастер</label>
+                <select name="technician" class="form-select">
+                    <option value="">Все</option>
+                    <option value="none" {% if request.GET.technician == 'none' %}selected{% endif %}>Не назначен</option>
+                    {% for tech in technicians %}
+                    <option value="{{ tech.id }}" {% if request.GET.technician == tech.id|stringformat:"i" %}selected{% endif %}>
+                        {{ tech.user.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search me-2"></i>Фильтр
+                </button>
+                <a href="{% url 'dashboard:service_request_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-warning bg-opacity-10 border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-warning small fw-semibold">ОЖИДАЮТ</div>
+                        <div class="fs-4 fw-bold">{{ requests.filter.status__exact.pending.count|default:0 }}</div>
+                    </div>
+                    <i class="bi bi-clock text-warning fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info bg-opacity-10 border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-info small fw-semibold">В РАБОТЕ</div>
+                        <div class="fs-4 fw-bold">{{ requests.filter.status__exact.in_progress.count|default:0 }}</div>
+                    </div>
+                    <i class="bi bi-gear text-info fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success bg-opacity-10 border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-success small fw-semibold">ВЫПОЛНЕНО</div>
+                        <div class="fs-4 fw-bold">{{ requests.filter.status__exact.completed.count|default:0 }}</div>
+                    </div>
+                    <i class="bi bi-check-circle text-success fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger bg-opacity-10 border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-danger small fw-semibold">СРОЧНЫЕ</div>
+                        <div class="fs-4 fw-bold">{{ requests.filter.urgency__exact.emergency.count|default:0 }}</div>
+                    </div>
+                    <i class="bi bi-lightning text-danger fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Requests Table -->
+<div class="card table-card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Заявки ({{ requests.paginator.count }})</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Заявка</th>
+                    <th>Услуга</th>
+                    <th>Клиент</th>
+                    <th>Мастер</th>
+                    <th class="text-center">Дата</th>
+                    <th class="text-center">Статус</th>
+                    <th class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr class="{% if req.urgency == 'emergency' %}table-danger{% elif req.urgency == 'urgent' %}table-warning{% endif %}">
+                    <td>
+                        <a href="{% url 'dashboard:service_request_detail' req.request_number %}" 
+                           class="fw-bold text-decoration-none">
+                            #{{ req.request_number|slice:"-10:" }}
+                        </a>
+                        <br>
+                        {% if req.urgency == 'emergency' %}
+                        <span class="badge bg-danger">Экстренная</span>
+                        {% elif req.urgency == 'urgent' %}
+                        <span class="badge bg-warning text-dark">Срочная</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ req.service.name|truncatewords:4 }}</div>
+                        <small class="text-muted">{{ req.title|truncatewords:5 }}</small>
+                    </td>
+                    <td>
+                        <div>{{ req.contact_name }}</div>
+                        <small class="text-muted">{{ req.contact_phone }}</small>
+                    </td>
+                    <td>
+                        {% if req.technician %}
+                        <span class="badge bg-primary">{{ req.technician.user.full_name }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Не назначен</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if req.scheduled_date %}
+                        <div class="fw-semibold">{{ req.scheduled_date|date:"d.m.Y" }}</div>
+                        <small class="text-muted">{{ req.scheduled_time|time:"H:i" }}</small>
+                        {% else %}
+                        <div class="text-muted">{{ req.preferred_date|date:"d.m.Y" }}</div>
+                        <small class="text-muted">желаемая</small>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="status-badge {{ req.status }}">
+                            {{ req.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'dashboard:service_request_detail' req.request_number %}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Открыть
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        Заявки не найдены
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if requests.has_other_pages %}
+    <div class="card-footer bg-white">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if requests.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ requests.previous_page_number }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in requests.paginator.page_range %}
+                    {% if requests.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > requests.number|add:'-3' and num < requests.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if requests.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ requests.next_page_number }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Заказ #{{ order.order_number }} - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">Мои заказы</a></li>
+                <li class="breadcrumb-item active">Заказ #{{ order.order_number }}</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Order Details -->
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                            <div>
+                                <h4 class="mb-1">Заказ #{{ order.order_number }}</h4>
+                                <p class="text-muted mb-0">
+                                    от {{ order.created_at|date:"d.m.Y H:i" }}
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <span class="status-badge {{ order.status }}">
+                                    {{ order.get_status_display }}
+                                </span>
+                                <br>
+                                <small class="text-muted">
+                                    Оплата: 
+                                    <span class="status-badge {{ order.payment_status }} mt-1">
+                                        {{ order.get_payment_status_display }}
+                                    </span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Items -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-box me-2 text-primary"></i>Товары в заказе
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Товар</th>
+                                        <th class="text-center">Цена</th>
+                                        <th class="text-center">Кол-во</th>
+                                        <th class="text-end">Сумма</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order.items.all %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="{{ item.product.main_image.url }}" 
+                                                     alt="" class="rounded" 
+                                                     style="width: 60px; height: 60px; object-fit: cover;">
+                                                <div>
+                                                    <a href="{{ item.product.get_absolute_url }}" 
+                                                       class="text-dark text-decoration-none fw-semibold">
+                                                        {{ item.product.name }}
+                                                    </a>
+                                                    <div class="text-muted small">
+                                                        Артикул: {{ item.product.sku }}
+                                                    </div>
+                                                    {% if item.include_installation %}
+                                                    <span class="badge bg-info">+ Установка</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            {{ item.price|floatformat:0 }} ₽
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            {{ item.quantity }} шт.
+                                        </td>
+                                        <td class="text-end align-middle fw-semibold">
+                                            {{ item.total|floatformat:0 }} ₽
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Timeline -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2 text-primary"></i>История заказа
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="order-status-timeline">
+                            {% for history in order.status_history.all %}
+                            <div class="timeline-item {% if forloop.first %}current{% else %}completed{% endif %}">
+                                <div class="timeline-date">{{ history.created_at|date:"d.m.Y H:i" }}</div>
+                                <div class="timeline-title">{{ history.get_new_status_display }}</div>
+                                {% if history.comment %}
+                                <div class="text-muted small">{{ history.comment }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Delivery Info -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-truck me-2 text-primary"></i>Доставка
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Адрес доставки</h6>
+                                <p class="text-muted mb-0">
+                                    {{ order.delivery_postal_code }}, 
+                                    {{ order.delivery_city }}<br>
+                                    {{ order.delivery_address }}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Контактное лицо</h6>
+                                <p class="text-muted mb-0">
+                                    {{ order.contact_name }}<br>
+                                    {{ order.contact_phone }}<br>
+                                    {{ order.contact_email }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {% if order.include_installation %}
+                        <hr>
+                        <div class="row">
+                            <div class="col-12">
+                                <h6><i class="bi bi-tools me-2"></i>Услуга установки</h6>
+                                <p class="text-muted mb-0">
+                                    Дата: <strong>{{ order.installation_date|date:"d.m.Y" }}</strong>
+                                    {% if order.installation_notes %}
+                                    <br>Примечания: {{ order.installation_notes }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Order Summary Sidebar -->
+            <div class="col-lg-4">
+                <div class="cart-summary">
+                    <h4><i class="bi bi-receipt me-2"></i>Сумма заказа</h4>
+                    
+                    <div class="summary-row">
+                        <span>Товары:</span>
+                        <span>{{ order.subtotal|floatformat:0 }} ₽</span>
+                    </div>
+                    
+                    {% if order.discount > 0 %}
+                    <div class="summary-row text-success">
+                        <span>Скидка:</span>
+                        <span>-{{ order.discount|floatformat:0 }} ₽</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="summary-row">
+                        <span>Доставка:</span>
+                        <span>
+                            {% if order.delivery_cost > 0 %}
+                                {{ order.delivery_cost|floatformat:0 }} ₽
+                            {% else %}
+                                Бесплатно
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if order.installation_cost > 0 %}
+                    <div class="summary-row">
+                        <span>Установка:</span>
+                        <span>{{ order.installation_cost|floatformat:0 }} ₽</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="summary-row total">
+                        <span>Итого:</span>
+                        <span class="text-primary">{{ order.total|floatformat:0 }} ₽</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">Способ оплаты:</small>
+                        <div class="fw-semibold">{{ order.get_payment_method_display }}</div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            {% if order.can_be_cancelled %}
+                            <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                <i class="bi bi-x-circle me-2"></i>Отменить заказ
+                            </button>
+                            {% endif %}
+                            
+                            <a href="{% url 'orders:order_repeat' order.order_number %}" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-repeat me-2"></i>Повторить заказ
+                            </a>
+                            
+                            {% if order.status == 'completed' %}
+                            <a href="#" class="btn btn-outline-success">
+                                <i class="bi bi-download me-2"></i>Скачать документы
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Help -->
+                <div class="card mt-4">
+                    <div class="card-body text-center">
+                        <i class="bi bi-headset fs-1 text-primary mb-2"></i>
+                        <h6>Нужна помощь?</h6>
+                        <p class="text-muted small">Свяжитесь с нами по любым вопросам</p>
+                        <a href="tel:+78001234567" class="btn btn-primary btn-sm">
+                            <i class="bi bi-telephone me-2"></i>8 (800) 123-45-67
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Cancel Modal -->
+{% if order.can_be_cancelled %}
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Отмена заказа</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'orders:order_cancel' order.order_number %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите отменить заказ <strong>#{{ order.order_number }}</strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Причина отмены (необязательно)</label>
+                        <textarea name="reason" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Товары будут возвращены на склад автоматически.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-danger">Отменить заказ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

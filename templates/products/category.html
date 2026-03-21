@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'products:product_list' %}">Каталог</a></li>
+                <li class="breadcrumb-item active">{{ category.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1">{{ category.name }}</h1>
+                {% if category.description %}
+                <p class="text-muted mb-0">{{ category.description }}</p>
+                {% endif %}
+            </div>
+            <span class="badge bg-primary">{{ products.paginator.count }} товаров</span>
+        </div>
+        
+        <!-- Subcategories -->
+        {% if subcategories %}
+        <div class="row g-3 mb-4">
+            {% for subcat in subcategories %}
+            <div class="col-auto">
+                <a href="{% url 'products:category' subcat.slug %}" class="btn btn-outline-primary">
+                    {{ subcat.name }}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Products -->
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-lg-3 col-md-4 col-6">
+                {% include 'products/includes/product_card.html' %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <div class="icon"><i class="bi bi-box"></i></div>
+                    <h3>В этой категории пока нет товаров</h3>
+                    <a href="{% url 'products:product_list' %}" class="btn btn-primary">
+                        Перейти в каталог
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if products.has_other_pages %}
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if products.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.previous_page_number }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                {% for num in products.paginator.page_range %}
+                    {% if products.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.next_page_number }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

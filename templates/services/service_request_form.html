@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Заявка на услугу - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'services:service_list' %}">Услуги</a></li>
+                <li class="breadcrumb-item active">Заявка</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-tools me-2"></i>
+                            {% if service %}
+                                Заявка: {{ service.name }}
+                            {% else %}
+                                Заявка на услугу
+                            {% endif %}
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            
+                            <!-- Service Selection -->
+                            <div class="mb-4">
+                                <h5><i class="bi bi-1-circle-fill text-primary me-2"></i>Выберите услугу</h5>
+                                {{ form.service|as_crispy_field }}
+                                {{ form.urgency|as_crispy_field }}
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Problem Description -->
+                            <div class="mb-4">
+                                <h5><i class="bi bi-2-circle-fill text-primary me-2"></i>Опишите проблему</h5>
+                                {{ form.title|as_crispy_field }}
+                                {{ form.description|as_crispy_field }}
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Фото 1</label>
+                                        <input type="file" name="photo1" class="form-control" accept="image/*">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Фото 2</label>
+                                        <input type="file" name="photo2" class="form-control" accept="image/*">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Фото 3</label>
+                                        <input type="file" name="photo3" class="form-control" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Contact Info -->
+                            <div class="mb-4">
+                                <h5><i class="bi bi-3-circle-fill text-primary me-2"></i>Контактные данные</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        {{ form.contact_name|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.contact_phone|as_crispy_field }}
+                                    </div>
+                                    <div class="col-12">
+                                        {{ form.contact_email|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Address -->
+                            <div class="mb-4">
+                                <h5><i class="bi bi-4-circle-fill text-primary me-2"></i>Адрес выезда</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        {{ form.address_city|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ form.address_street|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Date & Time -->
+                            <div class="mb-4">
+                                <h5><i class="bi bi-5-circle-fill text-primary me-2"></i>Желаемая дата и время</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        {{ form.preferred_date|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.preferred_time_from|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.preferred_time_to|as_crispy_field }}
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Рабочее время: 08:00 - 20:00. Минимальное окно для визита — 2 часа.
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Notes -->
+                            <div class="mb-4">
+                                {{ form.customer_notes|as_crispy_field }}
+                            </div>
+                            
+                            <!-- Submit -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-send me-2"></i>Отправить заявку
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Info Cards -->
+                <div class="row g-4 mt-4">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body text-center">
+                                <i class="bi bi-clock text-primary fs-1 mb-3"></i>
+                                <h6>Быстрый отклик</h6>
+                                <p class="text-muted small mb-0">Перезвоним в течение 30 минут</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body text-center">
+                                <i class="bi bi-shield-check text-success fs-1 mb-3"></i>
+                                <h6>Гарантия</h6>
+                                <p class="text-muted small mb-0">На все виды работ</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body text-center">
+                                <i class="bi bi-cash-coin text-warning fs-1 mb-3"></i>
+                                <h6>Честные цены</h6>
+                                <p class="text-muted small mb-0">Без скрытых платежей</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

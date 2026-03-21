@@ -1,0 +1,285 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Дашборд{% endblock %}
+{% block page_title %}Дашборд{% endblock %}
+
+{% block content %}
+<!-- Stats Row -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1">Заказы сегодня</p>
+                        <h3 class="mb-0">{{ orders_today }}</h3>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-up"></i> +12% от вчера
+                        </small>
+                    </div>
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-bag"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1">Выручка сегодня</p>
+                        <h3 class="mb-0">{{ revenue_today|floatformat:0 }} ₽</h3>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-up"></i> +8%
+                        </small>
+                    </div>
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1">Ожидают обработки</p>
+                        <h3 class="mb-0">{{ orders_pending }}</h3>
+                        <small class="text-warning">
+                            Требуют внимания
+                        </small>
+                    </div>
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1">Заявки на услуги</p>
+                        <h3 class="mb-0">{{ service_requests_pending }}</h3>
+                        <small class="text-info">
+                            Новых сегодня: {{ service_requests_today }}
+                        </small>
+                    </div>
+                    <div class="stat-icon bg-info bg-opacity-10 text-info">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Продажи за неделю</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary active">Неделя</button>
+                    <button class="btn btn-outline-primary">Месяц</button>
+                    <button class="btn btn-outline-primary">Год</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'dashboard:order_list' %}?status=pending" class="btn btn-outline-warning">
+                        <i class="bi bi-bag me-2"></i>Новые заказы 
+                        <span class="badge bg-warning text-dark">{{ orders_pending }}</span>
+                    </a>
+                    <a href="{% url 'dashboard:service_request_list' %}?status=pending" class="btn btn-outline-info">
+                        <i class="bi bi-tools me-2"></i>Новые заявки
+                        <span class="badge bg-info">{{ service_requests_pending }}</span>
+                    </a>
+                    <a href="{% url 'dashboard:review_list' %}?status=pending" class="btn btn-outline-secondary">
+                        <i class="bi bi-star me-2"></i>Отзывы на модерации
+                        <span class="badge bg-secondary">{{ pending_reviews }}</span>
+                    </a>
+                    <a href="{% url 'dashboard:product_list' %}?stock=low" class="btn btn-outline-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Мало на складе
+                        <span class="badge bg-danger">{{ products_low_stock }}</span>
+                    </a>
+                </div>
+                
+                <hr>
+                
+                <h6 class="text-muted mb-3">Статистика за месяц</h6>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Заказов</span>
+                        <strong>{{ orders_month }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Выручка</span>
+                        <strong>{{ revenue_month|floatformat:0 }} ₽</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Новых клиентов</span>
+                        <strong>{{ users_new_month }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Row -->
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="card table-card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Последние заказы</h5>
+                <a href="{% url 'dashboard:order_list' %}" class="btn btn-sm btn-primary">Все заказы</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Заказ</th>
+                            <th>Клиент</th>
+                            <th>Сумма</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'dashboard:order_detail' order.order_number %}" class="fw-semibold text-decoration-none">
+                                    #{{ order.order_number|slice:"-8:" }}
+                                </a>
+                                <br>
+                                <small class="text-muted">{{ order.created_at|date:"d.m.Y H:i" }}</small>
+                            </td>
+                            <td>
+                                {{ order.user.full_name|default:order.user.email }}
+                            </td>
+                            <td class="fw-semibold">{{ order.total|floatformat:0 }} ₽</td>
+                            <td>
+                                <span class="status-badge {{ order.status }}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">Нет заказов</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-6">
+        <div class="card table-card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Последние заявки</h5>
+                <a href="{% url 'dashboard:service_request_list' %}" class="btn btn-sm btn-primary">Все заявки</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Заявка</th>
+                            <th>Услуга</th>
+                            <th>Клиент</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in recent_service_requests %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'dashboard:service_request_detail' request.request_number %}" class="fw-semibold text-decoration-none">
+                                    #{{ request.request_number|slice:"-8:" }}
+                                </a>
+                                <br>
+                                <small class="text-muted">{{ request.created_at|date:"d.m.Y H:i" }}</small>
+                            </td>
+                            <td>{{ request.service.name|truncatewords:3 }}</td>
+                            <td>{{ request.user.full_name|default:request.user.email }}</td>
+                            <td>
+                                <span class="status-badge {{ request.status }}">
+                                    {{ request.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">Нет заявок</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Sales Chart
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ sales_chart_labels|safe }},
+            datasets: [{
+                label: 'Выручка',
+                data: {{ sales_chart_data|safe }},
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' ₽';
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

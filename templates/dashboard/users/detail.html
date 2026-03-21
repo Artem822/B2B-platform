@@ -1,0 +1,238 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ user_obj.full_name|default:user_obj.email }}{% endblock %}
+{% block page_title %}Профиль пользователя{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- User Info -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if user_obj.avatar %}
+                <img src="{{ user_obj.avatar.url }}" alt="" class="rounded-circle mb-3" 
+                     style="width: 120px; height: 120px; object-fit: cover;">
+                {% else %}
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 120px; height: 120px; font-size: 3rem;">
+                    {{ user_obj.first_name|slice:":1"|upper|default:"?" }}
+                </div>
+                {% endif %}
+                
+                <h4 class="mb-1">{{ user_obj.full_name|default:"Без имени" }}</h4>
+                <p class="text-muted mb-2">{{ user_obj.email }}</p>
+                
+                {% if user_obj.role == 'admin' %}
+                <span class="badge bg-danger">Администратор</span>
+                {% elif user_obj.role == 'manager' %}
+                <span class="badge bg-warning text-dark">Менеджер</span>
+                {% elif user_obj.role == 'technician' %}
+                <span class="badge bg-info">Мастер</span>
+                {% else %}
+                <span class="badge bg-secondary">Клиент</span>
+                {% endif %}
+                
+                {% if user_obj.is_verified %}
+                <span class="badge bg-success ms-1">Верифицирован</span>
+                {% endif %}
+            </div>
+            
+            <hr class="my-0">
+            
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Телефон</small>
+                    <span>{{ user_obj.phone|default:"—" }}</span>
+                </div>
+                
+                {% if user_obj.company_name %}
+                <div class="mb-3">
+                    <small class="text-muted d-block">Компания</small>
+                    <span>{{ user_obj.company_name }}</span>
+                </div>
+                {% endif %}
+                
+                {% if user_obj.inn %}
+                <div class="mb-3">
+                    <small class="text-muted d-block">ИНН</small>
+                    <span>{{ user_obj.inn }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block">Дата регистрации</small>
+                    <span>{{ user_obj.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                
+                <div>
+                    <small class="text-muted d-block">Последний вход</small>
+                    <span>{{ user_obj.last_login|date:"d.m.Y H:i"|default:"—" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Статистика</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Заказов:</span>
+                    <strong>{{ orders_count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Сумма покупок:</span>
+                    <strong>{{ orders_total|floatformat:0 }} ₽</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Заявок на услуги:</span>
+                    <strong>{{ user_obj.service_requests.count }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Orders & Requests -->
+    <div class="col-lg-8">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#orders">
+                    Заказы ({{ orders.count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#requests">
+                    Заявки ({{ service_requests.count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#addresses">
+                    Адреса ({{ user_obj.addresses.count }})
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content bg-white rounded-bottom shadow-sm">
+            <!-- Orders Tab -->
+            <div class="tab-pane fade show active p-3" id="orders">
+                {% if orders %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Номер</th>
+                                <th>Дата</th>
+                                <th>Сумма</th>
+                                <th>Статус</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'dashboard:order_detail' order.order_number %}">
+                                        #{{ order.order_number|slice:"-10:" }}
+                                    </a>
+                                </td>
+                                <td>{{ order.created_at|date:"d.m.Y" }}</td>
+                                <td>{{ order.total|floatformat:0 }} ₽</td>
+                                <td><span class="status-badge {{ order.status }}">{{ order.get_status_display }}</span></td>
+                                <td class="text-end">
+                                    <a href="{% url 'dashboard:order_detail' order.order_number %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-bag fs-1 d-block mb-2"></i>
+                    Заказов нет
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Requests Tab -->
+            <div class="tab-pane fade p-3" id="requests">
+                {% if service_requests %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Номер</th>
+                                <th>Услуга</th>
+                                <th>Дата</th>
+                                <th>Статус</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in service_requests %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'dashboard:service_request_detail' req.request_number %}">
+                                        #{{ req.request_number|slice:"-10:" }}
+                                    </a>
+                                </td>
+                                <td>{{ req.service.name|truncatewords:3 }}</td>
+                                <td>{{ req.created_at|date:"d.m.Y" }}</td>
+                                <td><span class="status-badge {{ req.status }}">{{ req.get_status_display }}</span></td>
+                                <td class="text-end">
+                                    <a href="{% url 'dashboard:service_request_detail' req.request_number %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-tools fs-1 d-block mb-2"></i>
+                    Заявок нет
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Addresses Tab -->
+            <div class="tab-pane fade p-3" id="addresses">
+                {% if user_obj.addresses.exists %}
+                <div class="row g-3">
+                    {% for address in user_obj.addresses.all %}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <strong>{{ address.title }}</strong>
+                                    {% if address.is_default %}
+                                    <span class="badge bg-primary">По умолчанию</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-muted mb-0">
+                                    {{ address.postal_code }}, {{ address.city }}<br>
+                                    {{ address.street }}, {{ address.building }}
+                                    {% if address.office %}, {{ address.office }}{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-geo-alt fs-1 d-block mb-2"></i>
+                    Адресов нет
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

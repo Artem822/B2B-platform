@@ -1,0 +1,219 @@
+{% extends 'dashboard/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if object %}Редактировать{% else %}Добавить{% endif %} товар{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Basic Info -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Основная информация</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название товара *</label>
+                        <input type="text" name="name" class="form-control" 
+                               value="{{ form.name.value|default:'' }}" required>
+                        {% if form.name.errors %}
+                        <div class="text-danger small">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Артикул (SKU) *</label>
+                            <input type="text" name="sku" class="form-control" 
+                                   value="{{ form.sku.value|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Бренд</label>
+                            <select name="brand" class="form-select">
+                                <option value="">Выберите бренд</option>
+                                {% for brand in brands %}
+                                <option value="{{ brand.id }}" {% if form.brand.value == brand.id %}selected{% endif %}>
+                                    {{ brand.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Категория *</label>
+                        <select name="category" class="form-select" required>
+                            <option value="">Выберите категорию</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if form.category.value == cat.id %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Краткое описание</label>
+                        <textarea name="short_description" class="form-control" rows="2">{{ form.short_description.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Полное описание *</label>
+                        <textarea name="description" class="form-control" rows="6" required>{{ form.description.value|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pricing -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Цена и наличие</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Цена *</label>
+                            <div class="input-group">
+                                <input type="number" name="price" class="form-control" 
+                                       value="{{ form.price.value|default:'' }}" step="0.01" min="0" required>
+                                <span class="input-group-text">₽</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Старая цена</label>
+                            <div class="input-group">
+                                <input type="number" name="old_price" class="form-control" 
+                                       value="{{ form.old_price.value|default:'' }}" step="0.01" min="0">
+                                <span class="input-group-text">₽</span>
+                            </div>
+                            <small class="text-muted">Для отображения скидки</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Остаток на складе *</label>
+                            <input type="number" name="stock" class="form-control" 
+                                   value="{{ form.stock.value|default:0 }}" min="0" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Additional Info -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Дополнительно</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Состояние</label>
+                            <select name="condition" class="form-select">
+                                <option value="new" {% if form.condition.value == 'new' %}selected{% endif %}>Новый</option>
+                                <option value="refurbished" {% if form.condition.value == 'refurbished' %}selected{% endif %}>Восстановленный</option>
+                                <option value="used" {% if form.condition.value == 'used' %}selected{% endif %}>Б/У</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Гарантия (мес.)</label>
+                            <input type="number" name="warranty_months" class="form-control" 
+                                   value="{{ form.warranty_months.value|default:12 }}" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Вес (кг)</label>
+                            <input type="number" name="weight" class="form-control" 
+                                   value="{{ form.weight.value|default:'' }}" step="0.001" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Publish -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Публикация</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="isActive"
+                               {% if form.is_active.value %}checked{% endif %}>
+                        <label class="form-check-label" for="isActive">Активен (виден на сайте)</label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_featured" id="isFeatured"
+                               {% if form.is_featured.value %}checked{% endif %}>
+                        <label class="form-check-label" for="isFeatured">Рекомендуемый товар</label>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>
+                            {% if object %}Сохранить изменения{% else %}Создать товар{% endif %}
+                        </button>
+                        <a href="{% url 'dashboard:product_list' %}" class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Image -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Изображение</h5>
+                </div>
+                <div class="card-body">
+                    {% if object and object.main_image %}
+                    <div class="mb-3 text-center">
+                        <img src="{{ object.main_image.url }}" alt="" class="img-fluid rounded" id="imagePreview">
+                    </div>
+                    {% else %}
+                    <div class="mb-3 text-center">
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                             style="height: 200px;" id="imagePlaceholder">
+                            <i class="bi bi-image text-muted fs-1"></i>
+                        </div>
+                        <img src="" alt="" class="img-fluid rounded d-none" id="imagePreview">
+                    </div>
+                    {% endif %}
+                    
+                    <input type="file" name="main_image" class="form-control" accept="image/*" 
+                           onchange="previewImage(this)">
+                    <small class="text-muted">Рекомендуемый размер: 800x800 px</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('imagePreview');
+                const placeholder = document.getElementById('imagePlaceholder');
+                
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+                
+                if (placeholder) {
+                    placeholder.classList.add('d-none');
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}
