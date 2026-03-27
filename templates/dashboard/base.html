@@ -297,27 +297,35 @@
                 <div class="dropdown">
                     <button class="btn btn-light position-relative" data-bs-toggle="dropdown">
                         <i class="bi bi-bell"></i>
+                        {% if admin_notifications_count > 0 %}
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-                            3
+                            {{ admin_notifications_count }}
                         </span>
+                        {% endif %}
                     </button>
                     <div class="dropdown-menu dropdown-menu-end" style="width: 300px;">
                         <h6 class="dropdown-header">Уведомления</h6>
-                        <a class="dropdown-item py-2" href="#">
+                        {% for notif in admin_notifications %}
+                        <a class="dropdown-item py-2" href="{% url 'accounts:notifications' %}">
                             <div class="d-flex">
                                 <div class="me-3">
-                                    <div class="bg-primary text-white rounded-circle p-2">
-                                        <i class="bi bi-bag"></i>
+                                    <div class="bg-{% if notif.type == 'order' %}primary{% elif notif.type == 'service' %}warning{% else %}info{% endif %} text-white rounded-circle p-2">
+                                        <i class="bi bi-{% if notif.type == 'order' %}bag{% elif notif.type == 'service' %}tools{% else %}bell{% endif %}"></i>
                                     </div>
                                 </div>
                                 <div>
-                                    <div class="small fw-semibold">Новый заказ #ORD-123</div>
-                                    <div class="text-muted small">5 минут назад</div>
+                                    <div class="small fw-semibold">{{ notif.title }}</div>
+                                    <div class="text-muted small">{{ notif.created_at|timesince }} назад</div>
                                 </div>
                             </div>
                         </a>
+                        {% empty %}
+                        <div class="dropdown-item text-center text-muted small py-3">
+                            Нет новых уведомлений
+                        </div>
+                        {% endfor %}
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item text-center small" href="#">Все уведомления</a>
+                        <a class="dropdown-item text-center small" href="{% url 'accounts:notifications' %}">Все уведомления</a>
                     </div>
                 </div>
                 

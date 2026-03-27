@@ -31,6 +31,9 @@ class ServiceListView(ListView):
         context['categories'] = ServiceCategory.objects.filter(is_active=True)
         context['popular_services'] = Service.objects.filter(is_active=True, is_popular=True)[:6]
         context['current_category'] = self.request.GET.get('category')
+        context['technicians'] = Technician.objects.filter(
+            is_available=True
+        ).select_related('user')[:4]
         return context
 
 

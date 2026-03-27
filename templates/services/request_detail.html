@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Заявка #{{ request.request_number }} - ServerPro B2B{% endblock %}
+
+{% block content %}
+<section class="breadcrumb-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'services:request_list' %}">Мои заявки</a></li>
+                <li class="breadcrumb-item active">Заявка #{{ request.request_number }}</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                            <div>
+                                <h4 class="mb-1">Заявка #{{ request.request_number }}</h4>
+                                <p class="text-muted mb-0">
+                                    от {{ request.created_at|date:"d.m.Y H:i" }}
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <span class="status-badge {{ request.status }}">
+                                    {{ request.get_status_display }}
+                                </span>
+                                {% if request.urgency == 'emergency' %}
+                                <br><span class="badge bg-danger mt-1">Экстренная</span>
+                                {% elif request.urgency == 'urgent' %}
+                                <br><span class="badge bg-warning text-dark mt-1">Срочная</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Request Info -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-tools me-2 text-primary"></i>Информация о заявке
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="text-muted">Услуга</h6>
+                                <p class="fw-semibold mb-1">{{ request.service.name }}</p>
+                                <p class="text-muted small mb-0">{{ request.service.category.name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted">Предварительная стоимость</h6>
+                                <p class="fs-4 fw-bold text-primary mb-0">{{ request.estimated_cost|floatformat:0 }} ₽</p>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <h6 class="text-muted">Описание проблемы</h6>
+                        <h5>{{ request.title }}</h5>
+                        <p class="mb-0">{{ request.description }}</p>
+
+                        {% if request.photo1 or request.photo2 or request.photo3 %}
+                        <hr>
+                        <h6 class="text-muted">Фотографии</h6>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if request.photo1 %}
+                            <a href="{{ request.photo1.url }}" target="_blank">
+                                <img src="{{ request.photo1.url }}" alt="" class="rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                            </a>
+                            {% endif %}
+                            {% if request.photo2 %}
+                            <a href="{{ request.photo2.url }}" target="_blank">
+                                <img src="{{ request.photo2.url }}" alt="" class="rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                            </a>
+                            {% endif %}
+                            {% if request.photo3 %}
+                            <a href="{{ request.photo3.url }}" target="_blank">
+                                <img src="{{ request.photo3.url }}" alt="" class="rounded" style="width: 100px; height: 100px; object-fit: cover;">
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2 text-primary"></i>История заявки
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="order-status-timeline">
+                            {% for history in request.status_history.all %}
+                            <div class="timeline-item {% if forloop.first %}current{% else %}completed{% endif %}">
+                                <div class="timeline-date">{{ history.created_at|date:"d.m.Y H:i" }}</div>
+                                <div class="timeline-title">{{ history.get_new_status_display }}</div>
+                                {% if history.comment %}
+                                <div class="text-muted small">{{ history.comment }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Summary -->
+                <div class="cart-summary">
+                    <h4><i class="bi bi-info-circle me-2"></i>Детали</h4>
+
+                    <div class="summary-row">
+                        <span>Контакт:</span>
+                        <span>{{ request.contact_name }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Телефон:</span>
+                        <span>{{ request.contact_phone }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Город:</span>
+                        <span>{{ request.address_city }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Адрес:</span>
+                        <span>{{ request.address_street }}</span>
+                    </div>
+
+                    <hr>
+
+                    <div class="summary-row">
+                        <span>Желаемая дата:</span>
+                        <span>{{ request.preferred_date|date:"d.m.Y" }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Время:</span>
+                        <span>{{ request.preferred_time_from|time:"H:i" }} - {{ request.preferred_time_to|time:"H:i" }}</span>
+                    </div>
+
+                    {% if request.scheduled_date %}
+                    <hr>
+                    <div class="summary-row">
+                        <span>Назначено:</span>
+                        <span class="fw-semibold">{{ request.scheduled_date|date:"d.m.Y" }}</span>
+                    </div>
+                    {% if request.scheduled_time %}
+                    <div class="summary-row">
+                        <span>Время визита:</span>
+                        <span class="fw-semibold">{{ request.scheduled_time|time:"H:i" }}</span>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+
+                    {% if request.technician %}
+                    <hr>
+                    <div class="summary-row">
+                        <span>Мастер:</span>
+                        <span>{{ request.technician.user.full_name }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if request.final_cost %}
+                    <div class="summary-row total">
+                        <span>Итого:</span>
+                        <span class="text-primary">{{ request.final_cost|floatformat:0 }} ₽</span>
+                    </div>
+                    {% else %}
+                    <div class="summary-row total">
+                        <span>Оценка:</span>
+                        <span class="text-primary">{{ request.estimated_cost|floatformat:0 }} ₽</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Actions -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            {% if request.status == 'pending' or request.status == 'confirmed' %}
+                            <form action="{% url 'services:request_cancel' request.request_number %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger w-100"
+                                        onclick="return confirm('Вы уверены, что хотите отменить заявку?')">
+                                    <i class="bi bi-x-circle me-2"></i>Отменить заявку
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if request.status == 'completed' %}
+                            <a href="{% url 'reviews:add_service_review' request.request_number %}" class="btn btn-outline-success">
+                                <i class="bi bi-star me-2"></i>Оставить отзыв
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help -->
+                <div class="card mt-4">
+                    <div class="card-body text-center">
+                        <i class="bi bi-headset fs-1 text-primary mb-2"></i>
+                        <h6>Нужна помощь?</h6>
+                        <p class="text-muted small">Свяжитесь с нами по любым вопросам</p>
+                        <a href="tel:+78001234567" class="btn btn-primary btn-sm">
+                            <i class="bi bi-telephone me-2"></i>8 (800) 123-45-67
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

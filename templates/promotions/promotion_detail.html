@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
 {% block title %}{{ promotion.title }} - ServerPro B2B{% endblock %}
 
@@ -39,7 +39,7 @@
                     </div>
                 </div>
                 
-                <a href="#products" class="btn btn-light btn-lg">
+                <a href="{% url 'products:product_list' %}" class="btn btn-light btn-lg">
                     <i class="bi bi-bag me-2"></i>Смотреть товары
                 </a>
             </div>
@@ -61,19 +61,6 @@
                     </div>
                 </div>
                 
-                <!-- Products -->
-                {% if products %}
-                <div id="products">
-                    <h4 class="mb-4">Товары, участвующие в акции</h4>
-                    <div class="row g-4">
-                        {% for product in products %}
-                        <div class="col-md-4">
-                            {% include 'products/includes/product_card.html' %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
                 
                 <!-- Services -->
                 {% if services %}

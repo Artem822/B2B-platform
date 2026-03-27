@@ -234,8 +234,8 @@ class OrderStatusHistory(models.Model):
         related_name='status_history',
         verbose_name=_('Заказ')
     )
-    old_status = models.CharField(_('Предыдущий статус'), max_length=20, blank=True)
-    new_status = models.CharField(_('Новый статус'), max_length=20)
+    old_status = models.CharField(_('Предыдущий статус'), max_length=20, blank=True, choices=Order.STATUS_CHOICES)
+    new_status = models.CharField(_('Новый статус'), max_length=20, choices=Order.STATUS_CHOICES)
     changed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, verbose_name=_('Изменил')

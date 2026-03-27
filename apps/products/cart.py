@@ -44,16 +44,17 @@ class Cart:
     def __iter__(self):
         """Итерация по товарам в корзине."""
         product_ids = self.cart.keys()
-        products = Product.objects.filter(id__in=product_ids)
-        cart = self.cart.copy()
-        
-        for product in products:
-            cart[str(product.id)]['product'] = product
-        
-        for item in cart.values():
-            item['price'] = Decimal(item['price'])
-            item['total_price'] = item['price'] * item['quantity']
-            yield item
+        products = {str(p.id): p for p in Product.objects.filter(id__in=product_ids)}
+
+        for product_id, item in self.cart.items():
+            if product_id in products:
+                price = Decimal(item['price'])
+                yield {
+                    'product': products[product_id],
+                    'quantity': item['quantity'],
+                    'price': price,
+                    'total_price': price * item['quantity'],
+                }
     
     def __len__(self):
         """Количество товаров в корзине."""

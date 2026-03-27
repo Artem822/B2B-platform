@@ -107,7 +107,10 @@ def add_comment(request, slug):
             # Проверка на ответ
             parent_id = request.POST.get('parent_id')
             if parent_id:
-                comment.parent = Comment.objects.get(pk=parent_id)
+                try:
+                    comment.parent = Comment.objects.get(pk=parent_id, post=post)
+                except Comment.DoesNotExist:
+                    pass
             
             comment.save()
             messages.success(request, 'Комментарий добавлен!')

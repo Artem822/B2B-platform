@@ -2,12 +2,14 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView
 from django.http import JsonResponse
-from django.db.models import Q, Avg, Count
+from django.views.decorators.http import require_POST
+from django.db.models import Q, Avg, Count, F
 from django.contrib import messages
 from django.core.paginator import Paginator
 
 from .models import Product, Category, Brand, Wishlist
 from apps.reviews.models import Review
+from apps.blog.models import Post
 
 
 class HomeView(ListView):
@@ -25,9 +27,19 @@ class HomeView(ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.filter(is_active=True, parent=None)[:6]
+        context['categories'] = Category.objects.filter(
+            is_active=True, parent=None
+        ).annotate(
+            products_count=Count('products') + Count('children__products')
+        )[:6]
         context['new_products'] = Product.objects.filter(is_active=True).order_by('-created_at')[:8]
         context['brands'] = Brand.objects.filter(is_active=True)[:12]
+        context['testimonials'] = Review.objects.filter(
+            is_approved=True
+        ).select_related('user', 'product').order_by('-created_at')[:3]
+        context['blog_posts'] = Post.objects.filter(
+            status='published'
+        ).select_related('author', 'category').order_by('-published_at', '-created_at')[:3]
         return context
 
 
@@ -74,7 +86,7 @@ class ProductListView(ListView):
         # В наличии
         in_stock = self.request.GET.get('in_stock')
         if in_stock == 'true':
-            queryset = queryset.filter(stock__gt=0)
+            queryset = queryset.filter(stock__gt=F('reserved'))
         
         # Состояние
         condition = self.request.GET.get('condition')
@@ -179,6 +191,7 @@ class CategoryView(ListView):
         return context
 
 
+@require_POST
 @login_required
 def toggle_wishlist(request, product_id):
     """Добавить/удалить из избранного."""

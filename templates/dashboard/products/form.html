@@ -7,7 +7,17 @@
 {% block content %}
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    
+
+    {% if form.errors %}
+    <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Исправьте ошибки:</strong>
+        {% for field, errors in form.errors.items %}
+        <div>{{ field }}: {{ errors.0 }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="row g-4">
         <!-- Main Content -->
         <div class="col-lg-8">
@@ -37,7 +47,7 @@
                             <select name="brand" class="form-select">
                                 <option value="">Выберите бренд</option>
                                 {% for brand in brands %}
-                                <option value="{{ brand.id }}" {% if form.brand.value == brand.id %}selected{% endif %}>
+                                <option value="{{ brand.id }}" {% if form.brand.value|stringformat:"d" == brand.id|stringformat:"d" %}selected{% endif %}>
                                     {{ brand.name }}
                                 </option>
                                 {% endfor %}
@@ -50,7 +60,7 @@
                         <select name="category" class="form-select" required>
                             <option value="">Выберите категорию</option>
                             {% for cat in categories %}
-                            <option value="{{ cat.id }}" {% if form.category.value == cat.id %}selected{% endif %}>
+                            <option value="{{ cat.id }}" {% if form.category.value|stringformat:"d" == cat.id|stringformat:"d" %}selected{% endif %}>
                                 {{ cat.name }}
                             </option>
                             {% endfor %}
@@ -172,9 +182,9 @@
                     <h5 class="mb-0">Изображение</h5>
                 </div>
                 <div class="card-body">
-                    {% if object and object.main_image %}
+                    {% if object and object.main_image_url %}
                     <div class="mb-3 text-center">
-                        <img src="{{ object.main_image.url }}" alt="" class="img-fluid rounded" id="imagePreview">
+                        <img src="{{ object.main_image_url }}" alt="" class="img-fluid rounded" id="imagePreview">
                     </div>
                     {% else %}
                     <div class="mb-3 text-center">

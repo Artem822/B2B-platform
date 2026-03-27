@@ -35,7 +35,16 @@
                     <div class="card-body p-4">
                         <form method="POST" enctype="multipart/form-data">
                             {% csrf_token %}
-                            
+
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
                             <!-- Service Selection -->
                             <div class="mb-4">
                                 <h5><i class="bi bi-1-circle-fill text-primary me-2"></i>Выберите услугу</h5>

@@ -15,8 +15,8 @@
                 <h4 class="mb-3">Удалить товар?</h4>
                 
                 <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
-                    {% if object.main_image %}
-                    <img src="{{ object.main_image.url }}" alt="" class="rounded" 
+                    {% if object.main_image_url %}
+                    <img src="{{ object.main_image_url }}" alt="" class="rounded"
                          style="width: 80px; height: 80px; object-fit: cover;">
                     {% endif %}
                     <div class="text-start">

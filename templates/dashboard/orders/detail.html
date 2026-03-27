@@ -1,4 +1,5 @@
 {% extends 'dashboard/base.html' %}
+{% load static %}
 
 {% block title %}Заказ #{{ order.order_number }}{% endblock %}
 {% block page_title %}Заказ #{{ order.order_number }}{% endblock %}
@@ -77,8 +78,13 @@
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center gap-3">
-                                    <img src="{{ item.product.main_image.url }}" alt="" 
+                                    {% if item.product.main_image_url %}
+                                    <img src="{{ item.product.main_image_url }}" alt=""
                                          class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% else %}
+                                    <img src="{% static 'images/product-placeholder.svg' %}" alt=""
+                                         class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% endif %}
                                     <div>
                                         <div class="fw-semibold">{{ item.product.name }}</div>
                                         <small class="text-muted">{{ item.product.sku }}</small>

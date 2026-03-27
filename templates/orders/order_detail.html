@@ -70,9 +70,15 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center gap-3">
-                                                <img src="{{ item.product.main_image.url }}" 
-                                                     alt="" class="rounded" 
+                                                {% if item.product.main_image_url %}
+                                                <img src="{{ item.product.main_image_url }}"
+                                                     alt="" class="rounded"
                                                      style="width: 60px; height: 60px; object-fit: cover;">
+                                                {% else %}
+                                                <img src="{% static 'images/product-placeholder.svg' %}"
+                                                     alt="" class="rounded"
+                                                     style="width: 60px; height: 60px; object-fit: cover;">
+                                                {% endif %}
                                                 <div>
                                                     <a href="{{ item.product.get_absolute_url }}" 
                                                        class="text-dark text-decoration-none fw-semibold">
@@ -173,7 +179,7 @@
             
             <!-- Order Summary Sidebar -->
             <div class="col-lg-4">
-                <div class="cart-summary">
+                <div class="cart-summary" style="position: static;">
                     <h4><i class="bi bi-receipt me-2"></i>Сумма заказа</h4>
                     
                     <div class="summary-row">

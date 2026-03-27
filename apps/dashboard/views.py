@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
-from django.db.models import Sum, Count, Avg, F
+from django.db.models import Sum, Count, Avg, F, Q
 from django.db.models.functions import TruncDate, TruncMonth
 from django.utils import timezone
 from django.http import JsonResponse
@@ -16,7 +16,7 @@ from apps.accounts.models import User, Notification
 from apps.products.models import Product, Category, Brand
 from apps.orders.models import Order, OrderItem, OrderStatusHistory
 from apps.services.models import ServiceRequest, Service, Technician, ServiceRequestHistory
-from apps.blog.models import Post
+from apps.blog.models import Post, BlogCategory
 from apps.promotions.models import Promotion, PromoCode
 from apps.reviews.models import Review, ServiceReview
 
@@ -105,7 +105,7 @@ class DashboardHomeView(AdminRequiredMixin, ListView):
             item['date'].strftime('%d.%m') for item in sales_data
         ]
         context['sales_chart_data'] = [
-            float(item['total']) for item in sales_data
+            float(item['total'] or 0) for item in sales_data
         ]
         
         return context
@@ -136,18 +136,23 @@ class OrderListView(AdminRequiredMixin, ListView):
         search = self.request.GET.get('search')
         if search:
             queryset = queryset.filter(
-                order_number__icontains=search
-            ) | queryset.filter(
-                user__email__icontains=search
+                Q(order_number__icontains=search) |
+                Q(user__email__icontains=search)
             )
-        
+
         date_from = self.request.GET.get('date_from')
         if date_from:
-            queryset = queryset.filter(created_at__date__gte=date_from)
-        
+            try:
+                queryset = queryset.filter(created_at__date__gte=date_from)
+            except (ValueError, TypeError):
+                pass
+
         date_to = self.request.GET.get('date_to')
         if date_to:
-            queryset = queryset.filter(created_at__date__lte=date_to)
+            try:
+                queryset = queryset.filter(created_at__date__lte=date_to)
+            except (ValueError, TypeError):
+                pass
         
         return queryset
     
@@ -160,17 +165,26 @@ class OrderListView(AdminRequiredMixin, ListView):
 
 class OrderDetailView(AdminRequiredMixin, DetailView):
     """Детали заказа."""
-    
+
     model = Order
     template_name = 'dashboard/orders/detail.html'
     context_object_name = 'order'
     slug_field = 'order_number'
     slug_url_kwarg = 'order_number'
-    
+
     def get_queryset(self):
         return Order.objects.select_related('user').prefetch_related(
             'items__product', 'status_history__changed_by'
         )
+
+    def post(self, request, *args, **kwargs):
+        order = self.get_object()
+        admin_notes = request.POST.get('admin_notes')
+        if admin_notes is not None:
+            order.admin_notes = admin_notes
+            order.save(update_fields=['admin_notes'])
+            messages.success(request, 'Заметки сохранены')
+        return redirect('dashboard:order_detail', order_number=order.order_number)
 
 
 @login_required
@@ -188,18 +202,23 @@ def order_update_status(request, order_number):
         
         if new_status and new_status != order.status:
             old_status = order.status
-            
             # Обработка отмены
             if new_status == 'cancelled':
                 order.cancel(comment)
+            elif new_status == 'confirmed':
+                # Important: when status is pending we must reduce stock.
+                if old_status == 'pending':
+                    order.confirm()
+                else:
+                    order.status = 'confirmed'
+                    if not order.confirmed_at:
+                        order.confirmed_at = timezone.now()
+                    order.save()
             else:
                 order.status = new_status
                 
                 # Устанавливаем даты
-                if new_status == 'confirmed' and not order.confirmed_at:
-                    order.confirmed_at = timezone.now()
-                    order.confirm()
-                elif new_status == 'shipped' and not order.shipped_at:
+                if new_status == 'shipped' and not order.shipped_at:
                     order.shipped_at = timezone.now()
                 elif new_status == 'delivered' and not order.delivered_at:
                     order.delivered_at = timezone.now()
@@ -277,8 +296,10 @@ class ProductListView(AdminRequiredMixin, ListView):
         
         search = self.request.GET.get('search')
         if search:
-            queryset = queryset.filter(name__icontains=search) | queryset.filter(sku__icontains=search)
-        
+            queryset = queryset.filter(
+                Q(name__icontains=search) | Q(sku__icontains=search)
+            )
+
         category = self.request.GET.get('category')
         if category:
             queryset = queryset.filter(category_id=category)
@@ -376,6 +397,7 @@ class ProductDeleteView(AdminRequiredMixin, DeleteView):
             user=request.user,
             action='delete',
             model_name='Product',
+            object_id=obj.id,
             object_repr=str(obj),
             ip_address=request.META.get('REMOTE_ADDR')
         )
@@ -444,6 +466,12 @@ class ServiceRequestListView(AdminRequiredMixin, ListView):
         context['status_choices'] = ServiceRequest.STATUS_CHOICES
         context['urgency_choices'] = ServiceRequest.URGENCY_CHOICES
         context['technicians'] = Technician.objects.filter(is_available=True)
+        context['stats_pending'] = ServiceRequest.objects.filter(status='pending').count()
+        context['stats_in_progress'] = ServiceRequest.objects.filter(status='in_progress').count()
+        context['stats_completed'] = ServiceRequest.objects.filter(status='completed').count()
+        context['stats_emergency'] = ServiceRequest.objects.filter(urgency='emergency').exclude(
+            status__in=['completed', 'cancelled']
+        ).count()
         return context
 
 
@@ -484,15 +512,21 @@ def service_request_update(request, request_number):
         new_status = request.POST.get('status')
         if new_status and new_status != old_status:
             service_request.status = new_status
-            
+
             if new_status == 'completed':
                 service_request.completed_at = timezone.now()
-                service_request.final_cost = Decimal(request.POST.get('final_cost', 0))
-                service_request.hours_worked = Decimal(request.POST.get('hours_worked', 0))
-            
+
             if new_status == 'cancelled':
                 service_request.cancelled_at = timezone.now()
-        
+
+        # Часы и стоимость (сохраняем при любом обновлении)
+        hours_worked = request.POST.get('hours_worked')
+        if hours_worked:
+            service_request.hours_worked = Decimal(hours_worked or '0')
+        final_cost = request.POST.get('final_cost')
+        if final_cost:
+            service_request.final_cost = Decimal(final_cost or '0')
+
         # Назначение мастера
         technician_id = request.POST.get('technician')
         if technician_id:
@@ -516,15 +550,18 @@ def service_request_update(request, request_number):
         service_request.save()
         
         # История
-        if new_status and new_status != old_status:
+        comment = request.POST.get('comment', '').strip()
+        status_changed = new_status and new_status != old_status
+        if status_changed or comment:
             ServiceRequestHistory.objects.create(
                 request=service_request,
                 old_status=old_status,
-                new_status=new_status,
+                new_status=new_status if status_changed else old_status,
                 changed_by=request.user,
-                comment=request.POST.get('comment', '')
+                comment=comment
             )
-            
+
+        if status_changed:
             # Уведомление клиенту
             status_display = dict(ServiceRequest.STATUS_CHOICES).get(new_status)
             Notification.objects.create(
@@ -554,10 +591,12 @@ class UserListView(AdminRequiredMixin, ListView):
         
         search = self.request.GET.get('search')
         if search:
-            queryset = queryset.filter(email__icontains=search) | \
-                       queryset.filter(first_name__icontains=search) | \
-                       queryset.filter(last_name__icontains=search)
-        
+            queryset = queryset.filter(
+                Q(email__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search)
+            )
+
         role = self.request.GET.get('role')
         if role:
             queryset = queryset.filter(role=role)
@@ -595,22 +634,27 @@ class UserDetailView(AdminRequiredMixin, DetailView):
 
 class ReviewListView(AdminRequiredMixin, ListView):
     """Список отзывов."""
-    
+
     model = Review
     template_name = 'dashboard/reviews/list.html'
     context_object_name = 'reviews'
     paginate_by = 20
-    
+
     def get_queryset(self):
         queryset = Review.objects.select_related('user', 'product').order_by('-created_at')
-        
+
         status = self.request.GET.get('status')
         if status == 'pending':
             queryset = queryset.filter(is_approved=False)
         elif status == 'approved':
             queryset = queryset.filter(is_approved=True)
-        
+
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pending_count'] = Review.objects.filter(is_approved=False).count()
+        return context
 
 
 @login_required
@@ -654,12 +698,17 @@ class PostListView(AdminRequiredMixin, ListView):
 
 class PostCreateView(AdminRequiredMixin, CreateView):
     """Создание статьи."""
-    
+
     model = Post
     template_name = 'dashboard/blog/form.html'
     fields = ['title', 'category', 'excerpt', 'content', 'image', 'status', 'is_featured']
     success_url = reverse_lazy('dashboard:post_list')
-    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = BlogCategory.objects.all()
+        return context
+
     def form_valid(self, form):
         form.instance.author = self.request.user
         if form.instance.status == 'published':
@@ -670,12 +719,17 @@ class PostCreateView(AdminRequiredMixin, CreateView):
 
 class PostUpdateView(AdminRequiredMixin, UpdateView):
     """Редактирование статьи."""
-    
+
     model = Post
     template_name = 'dashboard/blog/form.html'
     fields = ['title', 'category', 'excerpt', 'content', 'image', 'status', 'is_featured']
     success_url = reverse_lazy('dashboard:post_list')
-    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = BlogCategory.objects.all()
+        return context
+
     def form_valid(self, form):
         if form.instance.status == 'published' and not form.instance.published_at:
             form.instance.published_at = timezone.now()
@@ -687,11 +741,16 @@ class PostUpdateView(AdminRequiredMixin, UpdateView):
 
 class PromotionListView(AdminRequiredMixin, ListView):
     """Список акций."""
-    
+
     model = Promotion
     template_name = 'dashboard/promotions/list.html'
     context_object_name = 'promotions'
     paginate_by = 20
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['now'] = timezone.now()
+        return context
 
 
 class PromotionCreateView(AdminRequiredMixin, CreateView):
@@ -741,9 +800,9 @@ def settings_view(request):
         settings.vk_url = request.POST.get('vk_url', '')
         settings.telegram_url = request.POST.get('telegram_url', '')
         settings.whatsapp = request.POST.get('whatsapp', '')
-        settings.min_order_amount = Decimal(request.POST.get('min_order_amount', 0))
-        settings.free_delivery_amount = Decimal(request.POST.get('free_delivery_amount', 50000))
-        settings.delivery_cost = Decimal(request.POST.get('delivery_cost', 500))
+        settings.min_order_amount = Decimal(request.POST.get('min_order_amount') or '0')
+        settings.free_delivery_amount = Decimal(request.POST.get('free_delivery_amount') or '50000')
+        settings.delivery_cost = Decimal(request.POST.get('delivery_cost') or '500')
         
         if 'logo' in request.FILES:
             settings.logo = request.FILES['logo']
@@ -846,7 +905,7 @@ class TechnicianDashboardView(TechnicianRequiredMixin, ListView):
             ).exclude(
                 status__in=['completed', 'cancelled']
             ).order_by('scheduled_date', 'scheduled_time')
-        except:
+        except Technician.DoesNotExist:
             return ServiceRequest.objects.none()
     
     def get_context_data(self, **kwargs):
@@ -855,20 +914,22 @@ class TechnicianDashboardView(TechnicianRequiredMixin, ListView):
         try:
             technician = self.request.user.technician_profile
             today = timezone.now().date()
-            
+
             context['today_requests'] = ServiceRequest.objects.filter(
                 technician=technician,
                 scheduled_date=today
             ).order_by('scheduled_time')
-            
+
             context['completed_count'] = ServiceRequest.objects.filter(
                 technician=technician,
                 status='completed'
             ).count()
-            
+
             context['rating'] = technician.rating
-            
-        except:
-            pass
-        
+
+        except Technician.DoesNotExist:
+            context.setdefault('today_requests', ServiceRequest.objects.none())
+            context.setdefault('completed_count', 0)
+            context.setdefault('rating', 0)
+
         return context

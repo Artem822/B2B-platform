@@ -104,9 +104,10 @@ def add_service_review(request, request_number):
             review.service_request = service_request
             review.technician = service_request.technician
             review.save()
-            
+
             # Обновляем рейтинг мастера
-            service_request.technician.update_rating()
+            if service_request.technician:
+                service_request.technician.update_rating()
             
             messages.success(request, 'Спасибо за отзыв!')
             return redirect('services:request_detail', request_number=request_number)

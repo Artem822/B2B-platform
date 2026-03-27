@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block meta_description %}B2B-платформа для серверных компонентов{% endblock %}">
-    
-    <title>{% block title %}ServerPro B2B{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ site_settings.meta_description|default:'B2B-платформа для серверных компонентов' }}{% endblock %}">
+
+    <title>{% block title %}{{ site_settings.site_name|default:'ServerPro B2B' }}{% endblock %}</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -44,12 +44,16 @@
                 <div class="row align-items-center">
                     <div class="col-md-6">
                         <div class="d-flex align-items-center gap-4">
-                            <a href="tel:+78001234567" class="text-white text-decoration-none">
-                                <i class="bi bi-telephone me-2"></i>8 (800) 123-45-67
+                            {% if site_settings.phone %}
+                            <a href="tel:{{ site_settings.phone }}" class="text-white text-decoration-none">
+                                <i class="bi bi-telephone me-2"></i>{{ site_settings.phone }}
                             </a>
-                            <a href="mailto:info@serverpro.ru" class="text-white text-decoration-none">
-                                <i class="bi bi-envelope me-2"></i>info@serverpro.ru
+                            {% endif %}
+                            {% if site_settings.email %}
+                            <a href="mailto:{{ site_settings.email }}" class="text-white text-decoration-none">
+                                <i class="bi bi-envelope me-2"></i>{{ site_settings.email }}
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="col-md-6 text-end">
@@ -69,8 +73,12 @@
             <div class="container">
                 <!-- Logo -->
                 <a class="navbar-brand fw-bold" href="{% url 'products:home' %}">
+                    {% if site_settings.logo %}
+                    <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" height="36">
+                    {% else %}
                     <i class="bi bi-server text-primary me-2"></i>
-                    <span class="text-gradient">ServerPro</span>
+                    <span class="text-gradient">{{ site_settings.site_name|default:'ServerPro' }}</span>
+                    {% endif %}
                 </a>
                 
                 <!-- Mobile Toggle -->
@@ -81,44 +89,10 @@
                 <!-- Desktop Menu -->
                 <div class="collapse navbar-collapse" id="navbarMain">
                     <ul class="navbar-nav mx-auto">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'products:product_list' %}">
                                 <i class="bi bi-grid me-1"></i>Каталог
                             </a>
-                            <div class="dropdown-menu dropdown-menu-mega">
-                                <div class="container">
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <h6 class="dropdown-header">Серверы</h6>
-                                            <a class="dropdown-item" href="#">Стоечные серверы</a>
-                                            <a class="dropdown-item" href="#">Башенные серверы</a>
-                                            <a class="dropdown-item" href="#">Блейд-серверы</a>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <h6 class="dropdown-header">Комплектующие</h6>
-                                            <a class="dropdown-item" href="#">Процессоры</a>
-                                            <a class="dropdown-item" href="#">Память</a>
-                                            <a class="dropdown-item" href="#">Накопители</a>
-                                            <a class="dropdown-item" href="#">RAID-контроллеры</a>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <h6 class="dropdown-header">Сетевое оборудование</h6>
-                                            <a class="dropdown-item" href="#">Коммутаторы</a>
-                                            <a class="dropdown-item" href="#">Маршрутизаторы</a>
-                                            <a class="dropdown-item" href="#">Сетевые карты</a>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="card bg-primary text-white">
-                                                <div class="card-body">
-                                                    <h6><i class="bi bi-fire me-2"></i>Акции</h6>
-                                                    <p class="small mb-2">Скидки до 30% на серверное оборудование</p>
-                                                    <a href="{% url 'promotions:promotion_list' %}" class="btn btn-light btn-sm">Смотреть</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'services:service_list' %}">
@@ -190,11 +164,9 @@
                                 </a></li>
                                 <li><a class="dropdown-item" href="{% url 'accounts:notifications' %}">
                                     <i class="bi bi-bell me-2"></i>Уведомления
-                                    {% with unread=user.notifications.filter.count %}
-                                    {% if unread > 0 %}
-                                    <span class="badge bg-danger">{{ unread }}</span>
+                                    {% if unread_notifications_count > 0 %}
+                                    <span class="badge bg-danger">{{ unread_notifications_count }}</span>
                                     {% endif %}
-                                    {% endwith %}
                                 </a></li>
                                 {% if user.is_admin or user.is_manager %}
                                 <li><hr class="dropdown-divider"></li>
@@ -226,7 +198,7 @@
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title">
-                <i class="bi bi-server text-primary me-2"></i>ServerPro
+                <i class="bi bi-server text-primary me-2"></i>{{ site_settings.site_name|default:'ServerPro' }}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
@@ -286,8 +258,12 @@
             <hr>
             
             <div class="text-muted small">
-                <p><i class="bi bi-telephone me-2"></i>8 (800) 123-45-67</p>
-                <p><i class="bi bi-envelope me-2"></i>info@serverpro.ru</p>
+                {% if site_settings.phone %}
+                <p><i class="bi bi-telephone me-2"></i>{{ site_settings.phone }}</p>
+                {% endif %}
+                {% if site_settings.email %}
+                <p><i class="bi bi-envelope me-2"></i>{{ site_settings.email }}</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -317,84 +293,71 @@
         {% block content %}{% endblock %}
     </main>
     
-    <!-- Call to Action -->
-    <section class="cta-section bg-primary text-white py-5">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <h3 class="mb-2">Нужна помощь с выбором оборудования?</h3>
-                    <p class="mb-0 opacity-75">Наши эксперты бесплатно проконсультируют вас и подберут оптимальное решение</p>
-                </div>
-                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                    <button class="btn btn-light btn-lg" data-bs-toggle="modal" data-bs-target="#callbackModal">
-                        <i class="bi bi-telephone me-2"></i>Заказать звонок
-                    </button>
-                </div>
-            </div>
-        </div>
-    </section>
     
     <!-- Footer -->
     <footer class="footer bg-dark text-white pt-5 pb-3">
         <div class="container">
             <div class="row g-4">
-                <div class="col-lg-4">
+                <div class="col-12 col-md-6 col-lg-4">
                     <h5 class="mb-3">
-                        <i class="bi bi-server text-primary me-2"></i>ServerPro B2B
+                        <i class="bi bi-server text-primary me-2"></i>{{ site_settings.site_name|default:'ServerPro B2B' }}
                     </h5>
                     <p class="text-muted">
-                        Профессиональные решения для вашего бизнеса. Серверное оборудование,
-                        комплектующие и услуги по установке и настройке.
+                        {{ site_settings.site_description|default:'Профессиональные решения для вашего бизнеса. Серверное оборудование, комплектующие и услуги по установке и настройке.' }}
                     </p>
                     <div class="d-flex gap-3">
-                        <a href="#" class="text-white fs-5"><i class="bi bi-telegram"></i></a>
-                        <a href="#" class="text-white fs-5"><i class="bi bi-whatsapp"></i></a>
-                        <a href="#" class="text-white fs-5"><i class="bi bi-envelope"></i></a>
+                        {% if site_settings.telegram_url %}
+                        <a href="{{ site_settings.telegram_url }}" class="text-white fs-5"><i class="bi bi-telegram"></i></a>
+                        {% endif %}
+                        {% if site_settings.whatsapp %}
+                        <a href="https://wa.me/{{ site_settings.whatsapp }}" class="text-white fs-5"><i class="bi bi-whatsapp"></i></a>
+                        {% endif %}
+                        {% if site_settings.vk_url %}
+                        <a href="{{ site_settings.vk_url }}" class="text-white fs-5"><i class="bi bi-chat-square"></i></a>
+                        {% endif %}
+                        {% if site_settings.email %}
+                        <a href="mailto:{{ site_settings.email }}" class="text-white fs-5"><i class="bi bi-envelope"></i></a>
+                        {% endif %}
                     </div>
                 </div>
-                
-                <div class="col-6 col-lg-2">
+
+                <div class="col-6 col-md-3 col-lg-2">
                     <h6 class="mb-3">Каталог</h6>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Серверы</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Процессоры</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Память</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Накопители</a></li>
+                        <li class="mb-2"><a href="{% url 'products:product_list' %}" class="text-muted text-decoration-none">Все товары</a></li>
+                        <li class="mb-2"><a href="{% url 'services:service_list' %}" class="text-muted text-decoration-none">Услуги</a></li>
+                        <li class="mb-2"><a href="{% url 'blog:post_list' %}" class="text-muted text-decoration-none">Блог</a></li>
+                        <li class="mb-2"><a href="{% url 'promotions:promotion_list' %}" class="text-muted text-decoration-none">Акции</a></li>
                     </ul>
                 </div>
-                
-                <div class="col-6 col-lg-2">
-                    <h6 class="mb-3">Услуги</h6>
+
+                <div class="col-6 col-md-3 col-lg-2">
+                    <h6 class="mb-3">Клиентам</h6>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><a href="{% url 'services:service_list' %}" class="text-muted text-decoration-none">Установка</a></li>
-                        <li class="mb-2"><a href="{% url 'services:service_list' %}" class="text-muted text-decoration-none">Настройка</a></li>
-                        <li class="mb-2"><a href="{% url 'services:service_list' %}" class="text-muted text-decoration-none">Обслуживание</a></li>
-                        <li class="mb-2"><a href="{% url 'services:service_list' %}" class="text-muted text-decoration-none">Ремонт</a></li>
+                        <li class="mb-2"><a href="{% url 'services:create_request' %}" class="text-muted text-decoration-none">Вызвать мастера</a></li>
+                        <li class="mb-2"><a href="{% url 'accounts:profile' %}" class="text-muted text-decoration-none">Личный кабинет</a></li>
+                        <li class="mb-2"><a href="{% url 'orders:cart' %}" class="text-muted text-decoration-none">Корзина</a></li>
                     </ul>
                 </div>
                 
-                <div class="col-6 col-lg-2">
-                    <h6 class="mb-3">Информация</h6>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">О компании</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Доставка</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Оплата</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Гарантия</a></li>
-                    </ul>
-                </div>
-                
-                <div class="col-6 col-lg-2">
+                <div class="col-6 col-md-3 col-lg-2">
                     <h6 class="mb-3">Контакты</h6>
                     <ul class="list-unstyled text-muted">
+                        {% if site_settings.phone %}
                         <li class="mb-2">
-                            <i class="bi bi-telephone me-2"></i>8 (800) 123-45-67
+                            <i class="bi bi-telephone me-2"></i>{{ site_settings.phone }}
                         </li>
+                        {% endif %}
+                        {% if site_settings.email %}
                         <li class="mb-2">
-                            <i class="bi bi-envelope me-2"></i>info@serverpro.ru
+                            <i class="bi bi-envelope me-2"></i>{{ site_settings.email }}
                         </li>
+                        {% endif %}
+                        {% if site_settings.address %}
                         <li class="mb-2">
-                            <i class="bi bi-geo-alt me-2"></i>Москва, ул. Примерная, 1
+                            <i class="bi bi-geo-alt me-2"></i>{{ site_settings.address }}
                         </li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
@@ -403,47 +366,13 @@
             
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start">
-                    <p class="text-muted mb-0">© 2024 ServerPro. Все права защищены.</p>
+                    <p class="text-muted mb-0">© {{ site_settings.site_name|default:'ServerPro' }}. Все права защищены.</p>
                 </div>
                 <div class="col-md-6 text-center text-md-end">
-                    <a href="#" class="text-muted text-decoration-none me-3">Политика конфиденциальности</a>
-                    <a href="#" class="text-muted text-decoration-none">Пользовательское соглашение</a>
                 </div>
             </div>
         </div>
     </footer>
-    
-    <!-- Callback Modal -->
-    <div class="modal fade" id="callbackModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title">Заказать звонок</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="callbackForm">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label">Ваше имя</label>
-                            <input type="text" class="form-control" name="name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Телефон</label>
-                            <input type="tel" class="form-control" name="phone" placeholder="+7 (___) ___-__-__" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Вопрос (необязательно)</label>
-                            <textarea class="form-control" name="message" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-telephone me-2"></i>Перезвоните мне
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
     
     <!-- Quick Service Request Modal -->
     <div class="modal fade" id="quickServiceModal" tabindex="-1">
@@ -481,27 +410,82 @@
         </div>
     </div>
     
-    <!-- Floating Action Button -->
-    <div class="fab-container position-fixed bottom-0 end-0 p-4" style="z-index: 1030;">
-        <div class="fab-buttons d-flex flex-column gap-2 align-items-end mb-2" style="display: none;">
+    <!-- AI Chat Widget -->
+    <div id="chatWidget" class="chat-widget">
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-robot fs-5"></i>
+                    <div>
+                        <div class="fw-bold">AI-Ассистент</div>
+                        <small class="opacity-75">ServerPro</small>
+                    </div>
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-link text-white p-1" id="chatClearBtn" title="Очистить чат">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <button class="btn btn-sm btn-link text-white p-1" id="chatCloseBtn">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-bubble assistant">
+                    Здравствуйте! Я AI-ассистент ServerPro. Помогу с вопросами о товарах, услугах и заказах. Чем могу помочь?
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="quick-actions" id="quickActions">
+                    <button class="quick-btn" data-msg="Какие товары есть в наличии?">Товары</button>
+                    <button class="quick-btn" data-msg="Расскажите об услугах">Услуги</button>
+                    <button class="quick-btn" data-msg="Как сделать заказ?">Заказ</button>
+                    <button class="quick-btn" data-msg="Нужна консультация">Консультация</button>
+                </div>
+                <form id="chatForm" class="chat-input-form">
+                    <input type="text" id="chatInput" class="form-control"
+                           placeholder="Введите сообщение..." autocomplete="off" maxlength="2000">
+                    <button type="submit" class="btn btn-primary" id="chatSendBtn">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <button class="chat-toggle-btn shadow" id="chatToggleBtn" title="AI-Ассистент">
+            <i class="bi bi-chat-dots fs-4" id="chatToggleIcon"></i>
+            <span class="chat-badge" id="chatBadge" style="display:none;"></span>
+        </button>
+    </div>
+
+    <!-- FAB Quick Actions -->
+    <div class="fab-container position-fixed" style="bottom: 90px; right: 24px; z-index: 1029;">
+        <div class="fab-buttons" id="fabButtons">
             <a href="{% url 'services:create_request' %}" class="btn btn-success rounded-pill shadow">
                 <i class="bi bi-tools me-2"></i>Вызвать мастера
             </a>
-            <a href="https://wa.me/78001234567" class="btn btn-success rounded-pill shadow" target="_blank">
+            {% if site_settings.whatsapp %}
+            <a href="https://wa.me/{{ site_settings.whatsapp }}" class="btn btn-success rounded-pill shadow" target="_blank">
                 <i class="bi bi-whatsapp me-2"></i>WhatsApp
             </a>
-            <a href="https://t.me/serverpro" class="btn btn-info rounded-pill shadow" target="_blank">
+            {% endif %}
+            {% if site_settings.telegram_url %}
+            <a href="{{ site_settings.telegram_url }}" class="btn btn-telegram rounded-pill shadow" target="_blank">
                 <i class="bi bi-telegram me-2"></i>Telegram
             </a>
+            {% endif %}
         </div>
-        <button class="btn btn-primary btn-lg rounded-circle shadow fab-toggle" style="width: 60px; height: 60px;">
-            <i class="bi bi-chat-dots fs-4"></i>
-        </button>
+        <div class="text-end">
+            <button class="btn btn-success btn-lg rounded-circle shadow fab-toggle"
+                    type="button"
+                    id="fabToggleBtn">
+                <i class="bi bi-headset fs-4"></i>
+            </button>
+        </div>
     </div>
     
     <!-- Back to Top -->
-    <button id="backToTop" class="btn btn-primary rounded-circle position-fixed shadow" 
-            style="bottom: 100px; right: 24px; width: 50px; height: 50px; display: none; z-index: 1020;">
+    <button id="backToTop" class="btn btn-primary rounded-circle position-fixed shadow"
+            style="bottom: 24px; right: 100px; width: 50px; height: 50px; display: none; z-index: 1020;">
         <i class="bi bi-arrow-up"></i>
     </button>
     
@@ -542,15 +526,228 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
         
+        // Wishlist toggle
+        function toggleWishlist(productId) {
+            fetch('/wishlist/toggle/' + productId + '/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                                   document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(function(response) {
+                if (response.status === 302 || response.redirected) {
+                    window.location.href = '/accounts/login/?next=' + window.location.pathname;
+                    return;
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                if (!data) return;
+                var btns = document.querySelectorAll('[data-product-id="' + productId + '"]');
+                btns.forEach(function(btn) {
+                    var icon = btn.querySelector('i');
+                    var textSpan = btn.querySelector('span');
+                    if (data.added) {
+                        btn.classList.add('active');
+                        icon.classList.remove('bi-heart');
+                        icon.classList.add('bi-heart-fill');
+                        if (textSpan) textSpan.textContent = 'В избранном';
+                    } else {
+                        btn.classList.remove('active');
+                        icon.classList.remove('bi-heart-fill');
+                        icon.classList.add('bi-heart');
+                        if (textSpan) textSpan.textContent = 'В избранное';
+                    }
+                });
+            });
+        }
+
         // FAB toggle
-        const fabToggle = document.querySelector('.fab-toggle');
-        const fabButtons = document.querySelector('.fab-buttons');
-        
-        fabToggle.addEventListener('click', function() {
-            fabButtons.style.display = fabButtons.style.display === 'none' ? 'flex' : 'none';
-            this.querySelector('i').classList.toggle('bi-chat-dots');
-            this.querySelector('i').classList.toggle('bi-x-lg');
-        });
+        (function() {
+            var fabToggleBtn = document.getElementById('fabToggleBtn');
+            var fabButtonsPanel = document.getElementById('fabButtons');
+            var isOpen = false;
+
+            fabToggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                isOpen = !isOpen;
+                fabButtonsPanel.classList.toggle('open', isOpen);
+                var icon = this.querySelector('i');
+                icon.classList.toggle('bi-headset', !isOpen);
+                icon.classList.toggle('bi-x-lg', isOpen);
+            });
+
+            document.addEventListener('click', function(e) {
+                var fabContainer = document.querySelector('.fab-container');
+                if (fabContainer && !fabContainer.contains(e.target) && isOpen) {
+                    isOpen = false;
+                    fabButtonsPanel.classList.remove('open');
+                    var icon = fabToggleBtn.querySelector('i');
+                    icon.classList.add('bi-headset');
+                    icon.classList.remove('bi-x-lg');
+                }
+            });
+        })();
+
+        // AI Chat Widget
+        (function() {
+            var chatToggleBtn = document.getElementById('chatToggleBtn');
+            var chatWindow = document.getElementById('chatWindow');
+            var chatCloseBtn = document.getElementById('chatCloseBtn');
+            var chatClearBtn = document.getElementById('chatClearBtn');
+            var chatForm = document.getElementById('chatForm');
+            var chatInput = document.getElementById('chatInput');
+            var chatMessages = document.getElementById('chatMessages');
+            var quickActions = document.getElementById('quickActions');
+            var chatOpen = false;
+            var isLoading = false;
+
+            function getCSRF() {
+                var cookie = document.cookie.match(/csrftoken=([^;]+)/);
+                var input = document.querySelector('[name=csrfmiddlewaretoken]');
+                return (input && input.value) || (cookie && cookie[1]) || '';
+            }
+
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function addMessage(role, content) {
+                var div = document.createElement('div');
+                div.className = 'chat-bubble ' + role;
+                div.textContent = content;
+                chatMessages.appendChild(div);
+                scrollToBottom();
+            }
+
+            function addTypingIndicator() {
+                var div = document.createElement('div');
+                div.className = 'chat-bubble assistant typing-indicator';
+                div.id = 'typingIndicator';
+                div.innerHTML = '<span></span><span></span><span></span>';
+                chatMessages.appendChild(div);
+                scrollToBottom();
+            }
+
+            function removeTypingIndicator() {
+                var el = document.getElementById('typingIndicator');
+                if (el) el.remove();
+            }
+
+            function sendMessage(text) {
+                if (isLoading || !text.trim()) return;
+                isLoading = true;
+                chatInput.disabled = true;
+                quickActions.style.display = 'none';
+
+                addMessage('user', text);
+                addTypingIndicator();
+
+                fetch('/chatbot/send/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRF(),
+                    },
+                    body: JSON.stringify({ message: text })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    removeTypingIndicator();
+                    if (data.reply) {
+                        addMessage('assistant', data.reply);
+                    } else if (data.error) {
+                        addMessage('assistant', 'Ошибка: ' + data.error);
+                    }
+                })
+                .catch(function() {
+                    removeTypingIndicator();
+                    addMessage('assistant', 'Не удалось отправить сообщение. Попробуйте позже.');
+                })
+                .finally(function() {
+                    isLoading = false;
+                    chatInput.disabled = false;
+                    chatInput.focus();
+                });
+            }
+
+            // Load history on first open
+            var historyLoaded = false;
+            function loadHistory() {
+                if (historyLoaded) return;
+                historyLoaded = true;
+                fetch('/chatbot/history/')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.messages && data.messages.length > 0) {
+                        // Clear default greeting
+                        chatMessages.innerHTML = '';
+                        data.messages.forEach(function(m) {
+                            addMessage(m.role, m.content);
+                        });
+                    }
+                });
+            }
+
+            chatToggleBtn.addEventListener('click', function() {
+                chatOpen = !chatOpen;
+                chatWindow.classList.toggle('open', chatOpen);
+                var icon = document.getElementById('chatToggleIcon');
+                icon.classList.toggle('bi-chat-dots', !chatOpen);
+                icon.classList.toggle('bi-x-lg', chatOpen);
+                if (chatOpen) {
+                    loadHistory();
+                    chatInput.focus();
+                    scrollToBottom();
+                }
+            });
+
+            chatCloseBtn.addEventListener('click', function() {
+                chatOpen = false;
+                chatWindow.classList.remove('open');
+                var icon = document.getElementById('chatToggleIcon');
+                icon.classList.add('bi-chat-dots');
+                icon.classList.remove('bi-x-lg');
+            });
+
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var text = chatInput.value.trim();
+                if (text) {
+                    chatInput.value = '';
+                    sendMessage(text);
+                }
+            });
+
+            // Quick action buttons
+            quickActions.addEventListener('click', function(e) {
+                var btn = e.target.closest('.quick-btn');
+                if (btn) {
+                    sendMessage(btn.dataset.msg);
+                }
+            });
+
+            chatClearBtn.addEventListener('click', function() {
+                fetch('/chatbot/clear/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCSRF() },
+                }).then(function() {
+                    chatMessages.innerHTML = '';
+                    addMessage('assistant', 'Чат очищен. Чем могу помочь?');
+                    quickActions.style.display = '';
+                    historyLoaded = false;
+                });
+            });
+
+            // Close on Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && chatOpen) {
+                    chatCloseBtn.click();
+                }
+            });
+        })();
     </script>
     
     {% block extra_js %}{% endblock %}

@@ -37,7 +37,16 @@
         
         <form method="POST" id="checkoutForm">
             {% csrf_token %}
-            
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div class="row g-4">
                 <!-- Checkout Form -->
                 <div class="col-lg-8">
@@ -82,7 +91,7 @@
                                                    name="saved_address" id="address{{ address.id }}"
                                                    value="{{ address.id }}"
                                                    {% if address.is_default %}checked{% endif %}
-                                                   onchange="fillAddress({{ address.id }}, '{{ address.city }}', '{{ address.street }}, {{ address.building }}', '{{ address.postal_code }}')">
+                                                   onchange="fillAddress({{ address.id }}, '{{ address.city|escapejs }}', '{{ address.street|escapejs }}, {{ address.building|escapejs }}', '{{ address.postal_code|escapejs }}')">
                                             <label class="form-check-label" for="address{{ address.id }}">
                                                 <strong>{{ address.title }}</strong><br>
                                                 <small class="text-muted">
@@ -219,15 +228,20 @@
                 
                 <!-- Order Summary -->
                 <div class="col-lg-4">
-                    <div class="cart-summary">
+                    <div class="cart-summary sticky-summary">
                         <h4><i class="bi bi-bag-check me-2"></i>Ваш заказ</h4>
                         
                         <!-- Cart Items -->
                         <div class="mb-4">
                             {% for item in cart %}
                             <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
-                                <img src="{{ item.product.main_image.url }}" 
+                                {% if item.product.main_image_url %}
+                                <img src="{{ item.product.main_image_url }}"
                                      alt="" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                {% else %}
+                                <img src="{% static 'images/product-placeholder.svg' %}"
+                                     alt="" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                {% endif %}
                                 <div class="flex-grow-1">
                                     <div class="small fw-semibold">{{ item.product.name|truncatewords:5 }}</div>
                                     <div class="text-muted small">{{ item.quantity }} шт.</div>
@@ -241,13 +255,13 @@
                         
                         <!-- Promo Code -->
                         <div class="mb-4">
-                            <form method="POST" class="input-group">
-                                {% csrf_token %}
-                                <input type="text" class="form-control" name="promo_code" placeholder="Промокод">
-                                <button class="btn btn-outline-primary" type="submit" name="apply_promo">
+                            <div class="input-group">
+                                <input type="text" id="promoCodeInput" class="form-control" placeholder="Промокод"
+                                       value="{{ request.session.promo_code|default:'' }}">
+                                <button class="btn btn-outline-primary" type="button" id="applyPromoBtn">
                                     Применить
                                 </button>
-                            </form>
+                            </div>
                         </div>
                         
                         <!-- Totals -->
@@ -307,9 +321,9 @@
 
 {% block extra_js %}
 <script>
-    const subtotal = {{ subtotal }};
-    const deliveryCost = {{ delivery_cost }};
-    const discount = {{ discount }};
+    const subtotal = {{ subtotal|floatformat:0 }};
+    const deliveryCost = {{ delivery_cost|floatformat:0 }};
+    const discount = {{ discount|floatformat:0 }};
     
     function toggleInstallation() {
         const checkbox = document.getElementById('includeInstallation');
@@ -340,5 +354,60 @@
         document.querySelector('[name="delivery_address"]').value = address;
         document.querySelector('[name="delivery_postal_code"]').value = postal;
     }
+
+    // Promo code via fetch — preserves form fields
+    document.getElementById('applyPromoBtn').addEventListener('click', function() {
+        var code = document.getElementById('promoCodeInput').value.trim();
+        if (!code) return;
+        var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        var formData = new FormData();
+        formData.append('code', code);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        fetch('{% url "orders:apply_promo" %}', {
+            method: 'POST',
+            body: formData,
+            redirect: 'manual',
+        }).then(function() {
+            // Save current form values before reload
+            var form = document.getElementById('checkoutForm');
+            var savedData = {};
+            var inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(function(el) {
+                if (el.name && el.name !== 'csrfmiddlewaretoken') {
+                    if (el.type === 'checkbox') {
+                        savedData[el.name] = el.checked;
+                    } else if (el.type === 'radio') {
+                        if (el.checked) savedData[el.name] = el.value;
+                    } else {
+                        savedData[el.name] = el.value;
+                    }
+                }
+            });
+            sessionStorage.setItem('checkoutFormData', JSON.stringify(savedData));
+            window.location.reload();
+        });
+    });
+
+    // Restore form data after promo reload
+    (function() {
+        var saved = sessionStorage.getItem('checkoutFormData');
+        if (saved) {
+            sessionStorage.removeItem('checkoutFormData');
+            var data = JSON.parse(saved);
+            var form = document.getElementById('checkoutForm');
+            Object.keys(data).forEach(function(name) {
+                var el = form.querySelector('[name="' + name + '"]');
+                if (!el) return;
+                if (el.type === 'checkbox') {
+                    el.checked = data[name];
+                } else if (el.type === 'radio') {
+                    var radio = form.querySelector('[name="' + name + '"][value="' + data[name] + '"]');
+                    if (radio) radio.checked = true;
+                } else {
+                    el.value = data[name];
+                }
+            });
+        }
+    })();
 </script>
 {% endblock %}

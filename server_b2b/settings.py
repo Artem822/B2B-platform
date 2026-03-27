@@ -3,6 +3,7 @@ Django settings for server_b2b project.
 """
 
 from pathlib import Path
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'apps.promotions',
     'apps.reviews',
     'apps.dashboard',
+    'apps.chatbot',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +71,7 @@ TEMPLATES = [
                 'apps.products.context_processors.cart_context',
                 'apps.promotions.context_processors.active_promotions',
                 'apps.dashboard.context_processors.dashboard_context',
+                'apps.dashboard.context_processors.site_settings_context',
             ],
         },
     },
@@ -124,6 +127,7 @@ ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']       
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 
+LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -133,6 +137,7 @@ LOGOUT_REDIRECT_URL = '/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 
 customColorPalette = [
     {'color': 'hsl(4, 90%, 58%)',  'label': 'Red'},

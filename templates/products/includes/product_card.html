@@ -17,10 +17,10 @@
     
     <!-- Product Image -->
     <a href="{{ product.get_absolute_url }}">
-        {% if product.main_image %}
-        <img src="{{ product.main_image.url }}" class="card-img-top" alt="{{ product.name }}">
+        {% if product.main_image_url %}
+        <img src="{{ product.main_image_url }}" class="card-img-top" alt="{{ product.name }}">
         {% else %}
-        <img src="{% static 'images/product-placeholder.jpg' %}" class="card-img-top" alt="{{ product.name }}">
+        <img src="{% static 'images/product-placeholder.svg' %}" class="card-img-top" alt="{{ product.name }}">
         {% endif %}
     </a>
     
@@ -37,9 +37,9 @@
         {% if product.reviews.exists %}
         <div class="d-flex align-items-center gap-1 mb-2">
             <div class="text-warning small">
-                {% with avg_rating=product.reviews.aggregate_avg %}
+                {% with avg_rating=product.avg_rating %}
                 {% for i in "12345" %}
-                <i class="bi bi-star{% if forloop.counter <= avg_rating|default:0 %}-fill{% endif %}"></i>
+                <i class="bi bi-star{% if forloop.counter <= avg_rating %}-fill{% endif %}"></i>
                 {% endfor %}
                 {% endwith %}
             </div>

@@ -155,6 +155,16 @@ class Product(models.Model):
         return reverse('products:product_detail', kwargs={'slug': self.slug})
     
     @property
+    def main_image_url(self):
+        """URL главного изображения (безопасный доступ)."""
+        try:
+            if self.main_image and self.main_image.name:
+                return self.main_image.url
+        except ValueError:
+            pass
+        return None
+
+    @property
     def available_stock(self):
         """Доступное количество (за вычетом зарезервированного)."""
         return max(0, self.stock - self.reserved)
@@ -171,6 +181,13 @@ class Product(models.Model):
             return int(100 - (self.price / self.old_price * 100))
         return 0
     
+    @property
+    def avg_rating(self):
+        """Средний рейтинг товара."""
+        from django.db.models import Avg
+        result = self.reviews.filter(is_approved=True).aggregate(avg=Avg('rating'))
+        return result['avg'] or 0
+
     def reserve_stock(self, quantity):
         """Зарезервировать товар."""
         if quantity <= self.available_stock:

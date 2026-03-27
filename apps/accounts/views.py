@@ -4,8 +4,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.contrib import messages
 from django.views.generic import CreateView, UpdateView, ListView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.http import JsonResponse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import User, Address, Notification
 from .forms import (CustomUserCreationForm, CustomAuthenticationForm, 
@@ -37,7 +38,9 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             messages.success(request, f'Добро пожаловать, {user.full_name}!')
-            next_url = request.GET.get('next', 'products:home')
+            next_url = request.GET.get('next', '')
+            if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                next_url = reverse('products:home')
             return redirect(next_url)
     else:
         form = CustomAuthenticationForm()
@@ -134,11 +137,10 @@ def notifications_view(request):
 
 @login_required
 def notification_mark_read(request, pk):
-    """Отметить уведомление как прочитанное."""
+    """Удалить уведомление (отметить как прочитанное)."""
     notification = get_object_or_404(Notification, pk=pk, user=request.user)
-    notification.is_read = True
-    notification.save()
-    
+    notification.delete()
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'status': 'ok'})
     return redirect('accounts:notifications')
@@ -146,9 +148,9 @@ def notification_mark_read(request, pk):
 
 @login_required
 def mark_all_notifications_read(request):
-    """Отметить все уведомления как прочитанные."""
-    request.user.notifications.filter(is_read=False).update(is_read=True)
-    messages.success(request, 'Все уведомления отмечены как прочитанные.')
+    """Удалить все уведомления."""
+    request.user.notifications.all().delete()
+    messages.success(request, 'Все уведомления удалены.')
     return redirect('accounts:notifications')
 
 

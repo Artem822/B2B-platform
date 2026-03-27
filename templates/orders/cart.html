@@ -39,9 +39,15 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center gap-3">
-                                        <img src="{{ item.product.main_image.url }}" 
+                                        {% if item.product.main_image_url %}
+                                        <img src="{{ item.product.main_image_url }}"
                                              alt="{{ item.product.name }}"
                                              class="cart-item-image">
+                                        {% else %}
+                                        <img src="{% static 'images/product-placeholder.svg' %}"
+                                             alt="{{ item.product.name }}"
+                                             class="cart-item-image">
+                                        {% endif %}
                                         <div>
                                             <a href="{{ item.product.get_absolute_url }}" class="cart-item-title">
                                                 {{ item.product.name }}
@@ -77,11 +83,13 @@
                                     <span class="fw-bold text-primary">{{ item.total_price|floatformat:0 }} ₽</span>
                                 </td>
                                 <td class="text-center align-middle">
-                                    <a href="{% url 'orders:cart_remove' item.product.id %}" 
-                                       class="btn btn-sm btn-outline-danger"
-                                       onclick="return confirm('Удалить товар из корзины?')">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+                                    <form action="{% url 'orders:cart_remove' item.product.id %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('Удалить товар из корзины?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -99,7 +107,7 @@
             
             <!-- Cart Summary -->
             <div class="col-lg-4">
-                <div class="cart-summary">
+                <div class="cart-summary sticky-summary">
                     <h4><i class="bi bi-receipt me-2"></i>Итого</h4>
                     
                     <div class="summary-row">
@@ -120,7 +128,7 @@
                     <div class="alert alert-info small mt-3">
                         <i class="bi bi-info-circle me-1"></i>
                         До бесплатной доставки осталось: 
-                        <strong>{{ 50000|add:cart.get_total_price|floatformat:0 }} ₽</strong>
+                        <strong>{{ free_delivery_remaining|floatformat:0 }} ₽</strong>
                     </div>
                     {% else %}
                     <div class="summary-row text-success">
@@ -129,6 +137,13 @@
                     </div>
                     {% endif %}
                     
+                    {% if discount > 0 %}
+                    <div class="summary-row text-success">
+                        <span>Скидка ({{ promo_code.code }}):</span>
+                        <span>-{{ discount|floatformat:0 }} ₽</span>
+                    </div>
+                    {% endif %}
+
                     <div class="summary-row total">
                         <span>Итого к оплате:</span>
                         <span class="text-primary">
@@ -139,15 +154,25 @@
                             {% endif %}
                         </span>
                     </div>
-                    
+
                     <!-- Promo Code -->
                     <div class="mt-4">
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Промокод">
-                            <button class="btn btn-outline-primary">Применить</button>
+                        <form action="{% url 'orders:apply_promo' %}" method="POST">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text" name="code" class="form-control" placeholder="Промокод"
+                                       value="{{ request.session.promo_code|default:'' }}">
+                                <button type="submit" class="btn btn-outline-primary">Применить</button>
+                            </div>
+                        </form>
+                        {% if promo_code %}
+                        <div class="alert alert-success small mt-2 mb-0">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Промокод <strong>{{ promo_code.code }}</strong> применён. Скидка: {{ discount|floatformat:0 }} ₽
                         </div>
+                        {% endif %}
                     </div>
-                    
+
                     <!-- Checkout Button -->
                     <div class="d-grid mt-4">
                         <a href="{% url 'orders:checkout' %}" class="btn btn-primary btn-lg">

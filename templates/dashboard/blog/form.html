@@ -30,7 +30,7 @@
                         <select name="category" class="form-select">
                             <option value="">Без категории</option>
                             {% for cat in categories %}
-                            <option value="{{ cat.id }}" {% if form.category.value == cat.id %}selected{% endif %}>
+                            <option value="{{ cat.id }}" {% if form.category.value|stringformat:"d" == cat.id|stringformat:"d" %}selected{% endif %}>
                                 {{ cat.name }}
                             </option>
                             {% endfor %}

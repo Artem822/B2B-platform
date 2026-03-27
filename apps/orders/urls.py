@@ -10,6 +10,9 @@ urlpatterns = [
     path('cart/update/<int:product_id>/', views.cart_update, name='cart_update'),
     path('cart/remove/<int:product_id>/', views.cart_remove, name='cart_remove'),
     
+    # Промокод
+    path('cart/apply-promo/', views.apply_promo, name='apply_promo'),
+
     # Оформление заказа
     path('checkout/', views.checkout, name='checkout'),
     

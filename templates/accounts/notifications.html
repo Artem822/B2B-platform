@@ -55,12 +55,11 @@
                                     <small class="text-muted">{{ notification.created_at|timesince }} назад</small>
                                 </div>
                             </div>
-                            {% if not notification.is_read %}
-                            <a href="{% url 'accounts:notification_mark_read' notification.pk %}" 
-                               class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-check"></i>
-                            </a>
-                            {% endif %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-mark-read"
+                                    data-url="{% url 'accounts:notification_mark_read' notification.pk %}"
+                                    title="Удалить уведомление">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
                         </div>
                     </div>
                     {% endfor %}
@@ -78,4 +77,28 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.btn-mark-read').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var url = this.dataset.url;
+        var item = this.closest('.list-group-item');
+        fetch(url, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        }).then(function(resp) {
+            return resp.json();
+        }).then(function(data) {
+            if (data.status === 'ok') {
+                item.remove();
+                var list = document.querySelector('.list-group');
+                if (list && list.children.length === 0) {
+                    location.reload();
+                }
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -32,15 +32,22 @@
                         </span>
                         {% endif %}
                         
-                        <img src="{{ product.main_image.url }}" alt="{{ product.name }}" 
+                        {% if product.main_image_url %}
+                        <img src="{{ product.main_image_url }}" alt="{{ product.name }}"
                              class="product-main-image img-fluid" id="mainImage">
+                        {% else %}
+                        <img src="{% static 'images/product-placeholder.svg' %}" alt="{{ product.name }}"
+                             class="product-main-image img-fluid" id="mainImage">
+                        {% endif %}
                     </div>
-                    
+
                     <!-- Thumbnails -->
                     {% if images %}
                     <div class="product-thumbnails">
-                        <img src="{{ product.main_image.url }}" alt="" class="active" 
+                        {% if product.main_image_url %}
+                        <img src="{{ product.main_image_url }}" alt="" class="active"
                              onclick="changeMainImage(this)">
+                        {% endif %}
                         {% for image in images %}
                         <img src="{{ image.image.url }}" alt="" onclick="changeMainImage(this)">
                         {% endfor %}
@@ -145,9 +152,10 @@
                     <!-- Quick Actions -->
                     <div class="d-flex gap-3 mt-3">
                         {% if user.is_authenticated %}
-                        <button class="btn btn-outline-danger" onclick="toggleWishlist({{ product.id }})">
+                        <button class="btn btn-outline-danger" onclick="toggleWishlist({{ product.id }})"
+                                data-product-id="{{ product.id }}">
                             <i class="bi bi-heart{% if in_wishlist %}-fill{% endif %} me-2"></i>
-                            {% if in_wishlist %}В избранном{% else %}В избранное{% endif %}
+                            <span>{% if in_wishlist %}В избранном{% else %}В избранное{% endif %}</span>
                         </button>
                         {% endif %}
                         <button class="btn btn-outline-secondary" onclick="shareProduct()">

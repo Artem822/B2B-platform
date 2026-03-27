@@ -8,11 +8,28 @@ from django.utils import timezone
 from decimal import Decimal
 
 from .models import Order, OrderItem, OrderStatusHistory
-from .forms import CartAddForm, CheckoutForm, PromoCodeForm
+from .forms import CartAddForm, CheckoutForm
 from apps.products.models import Product
 from apps.products.cart import Cart
 from apps.promotions.models import PromoCode
 from apps.accounts.models import Notification
+
+
+def _get_valid_promo_from_session(request, cart_total):
+    """Получить валидный промокод из сессии и рассчитанную скидку."""
+    code = request.session.get('promo_code')
+    if not code:
+        return None, Decimal('0')
+    
+    try:
+        promo = PromoCode.objects.get(code__iexact=code)
+        if promo.is_valid():
+            return promo, promo.calculate_discount(cart_total)
+    except PromoCode.DoesNotExist:
+        pass
+    
+    request.session.pop('promo_code', None)
+    return None, Decimal('0')
 
 
 def cart_view(request):
@@ -24,7 +41,17 @@ def cart_view(request):
             'quantity': item['quantity'],
         })
     
-    return render(request, 'orders/cart.html', {'cart': cart})
+    total_price = cart.get_total_price()
+    free_delivery_remaining = max(Decimal('0'), Decimal('50000') - total_price)
+
+    promo_code, discount = _get_valid_promo_from_session(request, total_price)
+
+    return render(request, 'orders/cart.html', {
+        'cart': cart,
+        'free_delivery_remaining': free_delivery_remaining,
+        'promo_code': promo_code,
+        'discount': discount,
+    })
 
 
 @require_POST
@@ -81,12 +108,54 @@ def cart_update(request, product_id):
     return redirect('orders:cart')
 
 
+@require_POST
 def cart_remove(request, product_id):
     """Удаление товара из корзины."""
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
     cart.remove(product)
     messages.success(request, 'Товар удалён из корзины')
+    return redirect('orders:cart')
+
+
+@require_POST
+def apply_promo(request):
+    """Применение промокода (из корзины или чекаута)."""
+    code = request.POST.get('code', '').strip()
+    referer = request.META.get('HTTP_REFERER', '')
+
+    if not code:
+        messages.error(request, 'Введите промокод')
+        request.session.pop('promo_code', None)
+    else:
+        try:
+            promo = PromoCode.objects.get(code__iexact=code)
+            if promo.is_valid():
+                cart = Cart(request)
+                total = cart.get_total_price()
+                discount = promo.calculate_discount(total)
+                if discount <= 0:
+                    request.session.pop('promo_code', None)
+                    if promo.min_order_amount and total < promo.min_order_amount:
+                        messages.warning(
+                            request,
+                            f'Промокод действует при заказе от {promo.min_order_amount:,.0f} ₽. '
+                            f'Сумма корзины: {total:,.0f} ₽'.replace(',', ' ')
+                        )
+                    else:
+                        messages.error(request, 'Промокод не применим к данному заказу')
+                else:
+                    request.session['promo_code'] = promo.code
+                    messages.success(request, f'Промокод применён! Скидка: {discount:,.0f} ₽'.replace(',', ' '))
+            else:
+                request.session.pop('promo_code', None)
+                messages.error(request, 'Промокод недействителен или истёк')
+        except PromoCode.DoesNotExist:
+            request.session.pop('promo_code', None)
+            messages.error(request, 'Промокод не найден')
+
+    if 'checkout' in referer:
+        return redirect('orders:checkout')
     return redirect('orders:cart')
 
 
@@ -112,29 +181,15 @@ def checkout(request):
     
     promo_code = None
     discount = Decimal('0')
-    
+
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
-        promo_form = PromoCodeForm(request.POST)
-        
-        # Проверка промокода
-        if 'apply_promo' in request.POST and promo_form.is_valid():
-            code = promo_form.cleaned_data['code']
-            try:
-                promo = PromoCode.objects.get(code__iexact=code)
-                if promo.is_valid():
-                    promo_code = promo
-                    discount = promo.calculate_discount(cart.get_total_price())
-                    messages.success(request, f'Промокод применён! Скидка: {discount} ₽')
-                else:
-                    messages.error(request, 'Промокод недействителен или истёк')
-            except PromoCode.DoesNotExist:
-                messages.error(request, 'Промокод не найден')
-        
+
         # Оформление заказа
-        elif form.is_valid():
+        if form.is_valid():
             with transaction.atomic():
                 subtotal = cart.get_total_price()
+                promo_code, discount = _get_valid_promo_from_session(request, subtotal)
                 
                 # Рассчитываем стоимость доставки
                 delivery_cost = Decimal('0')
@@ -195,9 +250,12 @@ def checkout(request):
                 
                 # Очищаем корзину
                 cart.clear()
+                request.session.pop('promo_code', None)
                 
                 messages.success(request, f'Заказ #{order.order_number} успешно оформлен!')
                 return redirect('orders:order_detail', order_number=order.order_number)
+        else:
+            promo_code, discount = _get_valid_promo_from_session(request, cart.get_total_price())
     else:
         # Предзаполняем форму данными пользователя
         initial = {
@@ -216,19 +274,19 @@ def checkout(request):
             })
         
         form = CheckoutForm(initial=initial)
-        promo_form = PromoCodeForm()
-    
+        promo_code, discount = _get_valid_promo_from_session(request, cart.get_total_price())
+
     # Расчёт стоимости
     subtotal = cart.get_total_price()
     delivery_cost = Decimal('0') if subtotal >= 50000 else Decimal('500')
-    
+
     return render(request, 'orders/checkout.html', {
         'form': form,
-        'promo_form': promo_form,
         'cart': cart,
         'subtotal': subtotal,
         'delivery_cost': delivery_cost,
         'discount': discount,
+        'promo_code': promo_code,
         'total': subtotal + delivery_cost - discount,
     })
 
@@ -317,3 +375,9 @@ def order_repeat(request, order_number):
         messages.warning(request, 'Не удалось добавить товары. Возможно, они недоступны.')
     
     return redirect('orders:cart')
+
+
+
+
+
+
