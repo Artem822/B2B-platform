@@ -11,8 +11,11 @@ SECRET_KEY = 'django-insecure-%+q6j^e0q0=_e_*7tr25zfi&=c#ev!omhjy8gan7xt!8++m1f-
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["b2b-platform-production-2b7a.up.railway.app"]
 
+CORS_ALLOWED_ORIGINS = [
+    'https://b2b-platform-production-2b7a.up.railway.app',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
