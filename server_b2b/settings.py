@@ -17,6 +17,10 @@ CORS_ALLOWED_ORIGINS = [
     'https://b2b-platform-production-2b7a.up.railway.app',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://b2b-platform-production-2b7a.up.railway.app'
+]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
