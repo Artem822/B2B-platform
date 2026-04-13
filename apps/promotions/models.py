@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django_ckeditor_5.fields import CKEditor5Field
+from apps.products.models import generate_unique_slug
 
 
 class Promotion(models.Model):
@@ -16,7 +17,7 @@ class Promotion(models.Model):
     ]
     
     title = models.CharField(_('Название'), max_length=300)
-    slug = models.SlugField(_('URL'), max_length=300, unique=True)
+    slug = models.SlugField(_('URL'), max_length=300, unique=True, blank=True)
     type = models.CharField(_('Тип'), max_length=20, choices=TYPE_CHOICES)
     
     short_description = models.TextField(_('Краткое описание'), max_length=500)
@@ -71,7 +72,12 @@ class Promotion(models.Model):
     
     def __str__(self):
         return self.title
-    
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = generate_unique_slug(Promotion, self.title, self)
+        super().save(*args, **kwargs)
+
     @property
     def is_valid(self):
         """Акция действует."""

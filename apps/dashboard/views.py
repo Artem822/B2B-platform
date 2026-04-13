@@ -737,6 +737,27 @@ class PostUpdateView(AdminRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
+class PostDeleteView(AdminRequiredMixin, DeleteView):
+    """Удаление статьи."""
+
+    model = Post
+    template_name = 'dashboard/blog/confirm_delete.html'
+    success_url = reverse_lazy('dashboard:post_list')
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        ActivityLog.objects.create(
+            user=request.user,
+            action='delete',
+            model_name='Post',
+            object_id=obj.id,
+            object_repr=str(obj),
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        messages.success(request, 'Статья удалена')
+        return super().delete(request, *args, **kwargs)
+
+
 # ============ АКЦИИ ============
 
 class PromotionListView(AdminRequiredMixin, ListView):
@@ -755,11 +776,11 @@ class PromotionListView(AdminRequiredMixin, ListView):
 
 class PromotionCreateView(AdminRequiredMixin, CreateView):
     """Создание акции."""
-    
+
     model = Promotion
     template_name = 'dashboard/promotions/form.html'
     fields = [
-        'title', 'slug', 'type', 'short_description', 'description',
+        'title', 'type', 'short_description', 'description',
         'image', 'discount_percent', 'discount_amount',
         'start_date', 'end_date', 'is_active', 'is_featured', 'terms'
     ]
@@ -768,15 +789,36 @@ class PromotionCreateView(AdminRequiredMixin, CreateView):
 
 class PromotionUpdateView(AdminRequiredMixin, UpdateView):
     """Редактирование акции."""
-    
+
     model = Promotion
     template_name = 'dashboard/promotions/form.html'
     fields = [
-        'title', 'slug', 'type', 'short_description', 'description',
+        'title', 'type', 'short_description', 'description',
         'image', 'discount_percent', 'discount_amount',
         'start_date', 'end_date', 'is_active', 'is_featured', 'terms'
     ]
     success_url = reverse_lazy('dashboard:promotion_list')
+
+
+class PromotionDeleteView(AdminRequiredMixin, DeleteView):
+    """Удаление акции."""
+
+    model = Promotion
+    template_name = 'dashboard/promotions/confirm_delete.html'
+    success_url = reverse_lazy('dashboard:promotion_list')
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        ActivityLog.objects.create(
+            user=request.user,
+            action='delete',
+            model_name='Promotion',
+            object_id=obj.id,
+            object_repr=str(obj),
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        messages.success(request, 'Акция удалена')
+        return super().delete(request, *args, **kwargs)
 
 
 # ============ НАСТРОЙКИ ============

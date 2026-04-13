@@ -38,11 +38,13 @@ urlpatterns = [
     path('posts/', views.PostListView.as_view(), name='post_list'),
     path('posts/add/', views.PostCreateView.as_view(), name='post_create'),
     path('posts/<int:pk>/edit/', views.PostUpdateView.as_view(), name='post_update'),
-    
+    path('posts/<int:pk>/delete/', views.PostDeleteView.as_view(), name='post_delete'),
+
     # Акции
     path('promotions/', views.PromotionListView.as_view(), name='promotion_list'),
     path('promotions/add/', views.PromotionCreateView.as_view(), name='promotion_create'),
     path('promotions/<int:pk>/edit/', views.PromotionUpdateView.as_view(), name='promotion_update'),
+    path('promotions/<int:pk>/delete/', views.PromotionDeleteView.as_view(), name='promotion_delete'),
     
     # Настройки и отчёты
     path('settings/', views.settings_view, name='settings'),

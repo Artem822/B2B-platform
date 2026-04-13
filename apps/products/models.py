@@ -6,34 +6,50 @@ from django.utils.translation import gettext_lazy as _
 from unidecode import unidecode
 
 
+def generate_unique_slug(model_class, text, instance=None):
+    """Генерирует уникальный slug, добавляя суффикс при необходимости."""
+    base_slug = slugify(unidecode(text))
+    if not base_slug:
+        base_slug = 'item'
+    slug = base_slug
+    counter = 2
+    qs = model_class.objects.all()
+    if instance and instance.pk:
+        qs = qs.exclude(pk=instance.pk)
+    while qs.filter(slug=slug).exists():
+        slug = f'{base_slug}-{counter}'
+        counter += 1
+    return slug
+
+
 class Category(models.Model):
     """Категория товаров."""
-    
+
     name = models.CharField(_('Название'), max_length=200)
     slug = models.SlugField(_('URL'), max_length=200, unique=True, blank=True)
     description = models.TextField(_('Описание'), blank=True)
     image = models.ImageField(_('Изображение'), upload_to='categories/', blank=True, null=True)
     parent = models.ForeignKey(
-        'self', on_delete=models.CASCADE, 
-        null=True, blank=True, 
+        'self', on_delete=models.CASCADE,
+        null=True, blank=True,
         related_name='children',
         verbose_name=_('Родительская категория')
     )
     is_active = models.BooleanField(_('Активна'), default=True)
     order = models.PositiveIntegerField(_('Порядок'), default=0)
     created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
-    
+
     class Meta:
         verbose_name = _('Категория')
         verbose_name_plural = _('Категории')
         ordering = ['order', 'name']
-    
+
     def __str__(self):
         return self.name
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(unidecode(self.name))
+            self.slug = generate_unique_slug(Category, self.name, self)
         super().save(*args, **kwargs)
     
     def get_absolute_url(self):
@@ -67,7 +83,7 @@ class Brand(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(unidecode(self.name))
+            self.slug = generate_unique_slug(Brand, self.name, self)
         super().save(*args, **kwargs)
 
 
@@ -148,9 +164,9 @@ class Product(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(unidecode(self.name))
+            self.slug = generate_unique_slug(Product, self.name, self)
         super().save(*args, **kwargs)
-    
+
     def get_absolute_url(self):
         return reverse('products:product_detail', kwargs={'slug': self.slug})
     

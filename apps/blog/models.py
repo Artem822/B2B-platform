@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django_ckeditor_5.fields import CKEditor5Field
 from unidecode import unidecode
+from apps.products.models import generate_unique_slug
 
 
 class BlogCategory(models.Model):
@@ -91,7 +92,7 @@ class Post(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(unidecode(self.title))
+            self.slug = generate_unique_slug(Post, self.title, self)
         super().save(*args, **kwargs)
     
     def get_absolute_url(self):

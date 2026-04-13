@@ -77,6 +77,10 @@
                             <a href="{% url 'dashboard:post_update' post.pk %}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i>
                             </a>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    onclick="confirmDelete({{ post.pk }}, '{{ post.title|escapejs }}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -122,4 +126,37 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Удаление статьи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить статью <strong id="deletePostName"></strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <a href="#" id="deleteConfirmBtn" class="btn btn-danger">Удалить</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmDelete(postId, postTitle) {
+        document.getElementById('deletePostName').textContent = postTitle;
+        document.getElementById('deleteConfirmBtn').href = `/dashboard/posts/${postId}/delete/`;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+</script>
 {% endblock %}
