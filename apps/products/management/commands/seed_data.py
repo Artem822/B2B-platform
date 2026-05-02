@@ -848,56 +848,26 @@ class Command(BaseCommand):
         # 13. DASHBOARD SETTINGS
         # ============================================================
         settings = DashboardSettings.get_settings()
-        settings.site_name = 'ServerPro'
+        settings.site_name = 'Интернет-магазин комплектующих для серверов'
         settings.site_description = 'Профессиональные IT-решения для бизнеса. Серверное и сетевое оборудование, комплектующие и услуги по установке.'
         settings.email = 'serverpro@gmail.com'
         settings.phone = '+7 (950) 211-08-51'
         settings.address = 'г. Курск, ул. Ленина, 76, офис 312'
         settings.telegram_url = 'https://t.me/serverpro'
         settings.whatsapp = '79502110851'
-        settings.meta_title = 'ServerPro — серверное оборудование для бизнеса'
+        settings.meta_title = 'Интернет-магазин комплектующих для серверов'
         settings.meta_description = 'Интернет-магазин серверного и сетевого оборудования. Доставка по России, гарантия, техподдержка 24/7.'
         settings.min_order_amount = Decimal('5000')
         settings.free_delivery_amount = Decimal('50000')
         settings.delivery_cost = Decimal('500')
 
-        # Generate logo
+        # Логотип не создаётся автоматически — название сайта рендерится текстом в шапке.
+        # Загрузить кастомный логотип можно через админ-панель (Настройки сайта).
         from PIL import Image, ImageDraw, ImageFont
         from io import BytesIO
         from django.core.files.base import ContentFile
-
-        logo_w, logo_h = 280, 70
-        logo_img = Image.new('RGBA', (logo_w, logo_h), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(logo_img)
-
-        # Icon: rounded rect with "S"
-        icon_size = 50
-        ix, iy = 10, 10
-        draw.rounded_rectangle(
-            [ix, iy, ix + icon_size, iy + icon_size],
-            radius=12, fill=(37, 99, 235)
-        )
-        try:
-            icon_font = ImageFont.truetype("arialbd.ttf", 32)
-        except (IOError, OSError):
-            icon_font = ImageFont.load_default()
-        bbox = draw.textbbox((0, 0), "S", font=icon_font)
-        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        draw.text(
-            (ix + (icon_size - tw) // 2, iy + (icon_size - th) // 2 - 2),
-            "S", fill=(255, 255, 255), font=icon_font
-        )
-
-        # Text: "ServerPro"
-        try:
-            text_font = ImageFont.truetype("arialbd.ttf", 28)
-        except (IOError, OSError):
-            text_font = ImageFont.load_default()
-        draw.text((ix + icon_size + 12, 18), "ServerPro", fill=(30, 41, 59), font=text_font)
-
-        buf = BytesIO()
-        logo_img.save(buf, format='PNG')
-        settings.logo.save('logo.png', ContentFile(buf.getvalue()), save=False)
+        if settings.logo:
+            settings.logo.delete(save=False)
 
         # Favicon
         fav_size = 64

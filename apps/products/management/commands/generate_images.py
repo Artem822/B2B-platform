@@ -133,7 +133,7 @@ def make_logo():
         f2 = ImageFont.truetype('arialbd.ttf', 30)
     except (IOError, OSError):
         f2 = ImageFont.load_default()
-    draw.text((ix + icon_size + 14, 20), 'ServerPro', fill=(30, 41, 59), font=f2)
+    draw.text((ix + icon_size + 14, 20), 'Магазин серверов', fill=(30, 41, 59), font=f2)
 
     buf = BytesIO()
     img.save(buf, format='PNG')

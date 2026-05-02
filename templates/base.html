@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{% block meta_description %}{{ site_settings.meta_description|default:'B2B-платформа для серверных компонентов' }}{% endblock %}">
 
-    <title>{% block title %}{{ site_settings.site_name|default:'ServerPro B2B' }}{% endblock %}</title>
+    <title>{% block title %}{{ site_settings.site_name|default:'Интернет-магазин комплектующих для серверов' }}{% endblock %}</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -77,7 +77,7 @@
                     <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" height="36">
                     {% else %}
                     <i class="bi bi-server text-primary me-2"></i>
-                    <span class="text-gradient">{{ site_settings.site_name|default:'ServerPro' }}</span>
+                    <span class="text-gradient">{{ site_settings.site_name|default:'Интернет-магазин комплектующих для серверов' }}</span>
                     {% endif %}
                 </a>
                 
@@ -198,7 +198,7 @@
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title">
-                <i class="bi bi-server text-primary me-2"></i>{{ site_settings.site_name|default:'ServerPro' }}
+                <i class="bi bi-server text-primary me-2"></i>{{ site_settings.site_name|default:'Интернет-магазин комплектующих для серверов' }}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
@@ -300,7 +300,7 @@
             <div class="row g-4">
                 <div class="col-12 col-md-6 col-lg-4">
                     <h5 class="mb-3">
-                        <i class="bi bi-server text-primary me-2"></i>{{ site_settings.site_name|default:'ServerPro B2B' }}
+                        <i class="bi bi-server text-primary me-2"></i>{{ site_settings.site_name|default:'Интернет-магазин комплектующих для серверов' }}
                     </h5>
                     <p class="text-muted">
                         {{ site_settings.site_description|default:'Профессиональные решения для вашего бизнеса. Серверное оборудование, комплектующие и услуги по установке и настройке.' }}
@@ -366,7 +366,7 @@
             
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start">
-                    <p class="text-muted mb-0">© {{ site_settings.site_name|default:'ServerPro' }}. Все права защищены.</p>
+                    <p class="text-muted mb-0">© {{ site_settings.site_name|default:'Интернет-магазин комплектующих для серверов' }}. Все права защищены.</p>
                 </div>
                 <div class="col-md-6 text-center text-md-end">
                 </div>
@@ -418,7 +418,7 @@
                     <i class="bi bi-robot fs-5"></i>
                     <div>
                         <div class="fw-bold">AI-Ассистент</div>
-                        <small class="opacity-75">ServerPro</small>
+                        <small class="opacity-75">Интернет-магазин комплектующих для серверов</small>
                     </div>
                 </div>
                 <div class="d-flex gap-1">
@@ -432,7 +432,7 @@
             </div>
             <div class="chat-messages" id="chatMessages">
                 <div class="chat-bubble assistant">
-                    Здравствуйте! Я AI-ассистент ServerPro. Помогу с вопросами о товарах, услугах и заказах. Чем могу помочь?
+                    Здравствуйте! Я AI-ассистент Интернет-магазин комплектующих для серверов. Помогу с вопросами о товарах, услугах и заказах. Чем могу помочь?
                 </div>
             </div>
             <div class="chat-input-area">

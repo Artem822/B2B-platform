@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 class DashboardSettings(models.Model):
     """Настройки сайта."""
     
-    site_name = models.CharField(_('Название сайта'), max_length=200, default='ServerPro B2B')
+    site_name = models.CharField(_('Название сайта'), max_length=200, default='Интернет-магазин комплектующих для серверов')
     site_description = models.TextField(_('Описание'), blank=True)
     logo = models.ImageField(_('Логотип'), upload_to='settings/', blank=True, null=True)
     favicon = models.ImageField(_('Favicon'), upload_to='settings/', blank=True, null=True)
