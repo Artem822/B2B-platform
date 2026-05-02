@@ -72,12 +72,12 @@
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
             <div class="container">
                 <!-- Logo -->
-                <a class="navbar-brand fw-bold" href="{% url 'products:home' %}">
+                <a class="navbar-brand fw-bold site-brand d-flex align-items-center" href="{% url 'products:home' %}">
                     {% if site_settings.logo %}
                     <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" height="36">
                     {% else %}
-                    <i class="bi bi-server text-primary me-2"></i>
-                    <span class="text-gradient">{{ site_settings.site_name|default:'Интернет-магазин комплектующих для серверов' }}</span>
+                    <i class="bi bi-server text-primary me-2 fs-4"></i>
+                    <span class="text-gradient site-brand-text">{{ site_settings.site_name|default:'Интернет-магазин комплектующих для серверов' }}</span>
                     {% endif %}
                 </a>
                 
@@ -112,7 +112,7 @@
                     </ul>
                     
                     <!-- Search -->
-                    <form class="d-flex me-3" action="{% url 'products:search' %}" method="GET">
+                    <form class="d-flex me-3 navbar-search" action="{% url 'products:search' %}" method="GET">
                         <div class="input-group">
                             <input type="text" name="q" class="form-control" placeholder="Поиск товаров..." 
                                    value="{{ request.GET.q }}">

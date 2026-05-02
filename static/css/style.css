@@ -83,6 +83,46 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.5rem;
 }
 
+.site-brand {
+    max-width: 280px;
+    line-height: 1.15;
+}
+
+.site-brand-text {
+    font-size: 0.95rem;
+    font-weight: 700;
+    white-space: normal;
+    display: inline-block;
+    overflow-wrap: break-word;
+}
+
+@media (max-width: 1199.98px) {
+    .site-brand {
+        max-width: 200px;
+    }
+    .site-brand-text {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .site-brand {
+        max-width: 70vw;
+    }
+}
+
+.navbar-search {
+    min-width: 220px;
+    flex: 1 1 220px;
+}
+
+@media (max-width: 1199.98px) {
+    .navbar-search {
+        min-width: 160px;
+        flex: 1 1 160px;
+    }
+}
+
 .nav-link {
     font-weight: 500;
     padding: 0.5rem 1rem !important;
