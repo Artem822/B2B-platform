@@ -120,7 +120,8 @@ class ServiceReview(models.Model):
     technician = models.ForeignKey(
         'services.Technician', on_delete=models.CASCADE,
         related_name='reviews',
-        verbose_name=_('Мастер')
+        verbose_name=_('Мастер'),
+        null=True, blank=True
     )
     
     rating = models.PositiveIntegerField(
